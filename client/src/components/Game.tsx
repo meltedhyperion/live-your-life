@@ -42,10 +42,9 @@ export function Game({ accessToken, onScoreUpdate }: GameProps) {
     const handleAnswer = async (answer: string) => {
         if (loading || !currentQuestion) return;
         setLoading(true);
-
         try {
             const response = await fetch(
-                `${process.env.VITE_BACKEND_API}/questions/check`,
+                `${import.meta.env.VITE_BACKEND_API}/questions/check`,
                 {
                     method: "POST",
                     headers: {
@@ -58,7 +57,6 @@ export function Game({ accessToken, onScoreUpdate }: GameProps) {
                     }),
                 }
             );
-
             if (!response.ok) throw new Error("Failed to check answer");
             const result = await response.json();
             setAnswerResult(result.data);
@@ -72,6 +70,7 @@ export function Game({ accessToken, onScoreUpdate }: GameProps) {
                 });
             }
         } catch (error) {
+            console.error("Error submitting answer:", error);
             toast.error("Failed to submit answer");
         } finally {
             setLoading(false);
