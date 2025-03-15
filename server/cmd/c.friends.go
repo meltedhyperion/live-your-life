@@ -56,6 +56,6 @@ func (app *App) handleMakeFriend(w http.ResponseWriter, r *http.Request) {
 
 	_, _, _ = app.DB.From("friends").Insert(addFriendB, false, "", "", "").Execute()
 
-	sendResponse(w, http.StatusOK, resp, "Friend added successfully")
+	sendResponse(w, http.StatusOK, nil, "Friend added successfully")
 
 }

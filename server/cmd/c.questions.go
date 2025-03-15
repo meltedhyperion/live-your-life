@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
-	"fmt"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/meltedhyperion/globetrotter/server/util"
 )
@@ -85,11 +86,6 @@ func (app *App) handleCheckAnswer(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, http.StatusBadRequest, nil, err.Error())
 		return
 	}
-	// playerID, err := getUserIDFromContext(r)
-	// if err != nil {
-	// 	sendErrorResponse(w, http.StatusUnauthorized, nil, "User not authenticated")
-	// 	return
-	// }
 
 	var destination []util.Destination
 	result, _, err := app.DB.From("destinations").
