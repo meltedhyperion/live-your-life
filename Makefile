@@ -7,3 +7,6 @@ server-start: server-build
 
 server-dev:
 	@sh server/develop.sh
+
+docker-compose-server:
+	@docker-compose -f docker-compose-server.yaml up

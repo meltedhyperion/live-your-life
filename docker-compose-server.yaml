@@ -1,0 +1,9 @@
+services:
+  globetrotter-server:
+    build:
+      context: ./server
+    ports:
+      - "5050:5050"
+    env_file:
+      - ./server/.env
+    restart: unless-stopped
