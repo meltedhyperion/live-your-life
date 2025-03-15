@@ -1,4 +1,3 @@
-import React from "react";
 import { LogOut, Trophy, Share2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { Player } from "../types";

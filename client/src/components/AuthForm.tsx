@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Globe2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -44,7 +44,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           toast.success("Please check your email to confirm your account!");
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error(error.message);
     } finally {
       setLoading(false);

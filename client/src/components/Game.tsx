@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { MapPin, Frown } from "lucide-react";
 import { Question, AnswerResponse } from "../types";
