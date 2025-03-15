@@ -3,7 +3,7 @@ services:
     build:
       context: ./server
     ports:
-      - "5051:5050"
+      - "5051:5051"
     env_file:
       - ./server/.env
     restart: unless-stopped
