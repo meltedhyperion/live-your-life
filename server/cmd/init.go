@@ -40,7 +40,7 @@ func InitServer(app *App) {
 		AllowCredentials: true,
 		AllowedHeaders:   []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "Authorization"},
 		ExposedHeaders:   []string{"Authorization"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
+		AllowedMethods:   []string{"GET", "POST"},
 		AllowOriginFunc: func(origin string) bool {
 			return true
 		},
