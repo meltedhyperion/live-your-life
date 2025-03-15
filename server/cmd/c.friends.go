@@ -43,7 +43,7 @@ func (app *App) handleMakeFriend(w http.ResponseWriter, r *http.Request) {
 		Player2ID: friendId,
 	}
 
-	resp, _, err = app.DB.From("friends").Insert(addFriendA, false, "", "", "").Execute()
+	_, _, err = app.DB.From("friends").Insert(addFriendA, false, "", "", "").Execute()
 	if err != nil {
 		sendErrorResponse(w, http.StatusConflict, nil, "Friend already exists")
 		return
