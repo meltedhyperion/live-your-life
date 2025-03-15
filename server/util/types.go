@@ -3,8 +3,7 @@ package util
 import "time"
 
 type CreatePlayerReq struct {
-	Name   string `json:"name"`
-	UserId string `json:"user_id"`
+	Name string `json:"name"`
 }
 
 type Player struct {
@@ -62,4 +61,20 @@ type FriendRequest struct {
 type AddFriend struct {
 	Player1ID string `json:"player1_id"`
 	Player2ID string `json:"player2_id"`
+}
+
+type PlayerStats struct {
+	Name           string  `json:"name"`
+	Avatar         string  `json:"avatar"`
+	Score          float64 `json:"score"`
+	CorrectAnswers int     `json:"correct_answers"`
+	TotalAttempts  int     `json:"total_attempts"`
+}
+
+type Leaderboard struct {
+	PlayerStats []PlayerStats `json:"player_stats"`
+}
+
+type FriendsIDs struct {
+	FriendID string `json:"player2_id"`
 }
