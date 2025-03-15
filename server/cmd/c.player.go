@@ -1,9 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
-	"encoding/json"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/meltedhyperion/globetrotter/server/util"
 )
@@ -39,8 +40,7 @@ func (app *App) handleCreatePlayer(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:      time.Now(),
 	}
 
-	filterBuilder := app.DB.From("players").Insert(player, false, "", "representation", "")
-	resp, _, err := filterBuilder.Execute()
+	resp, _, err := app.DB.From("players").Insert(player, false, "", "representation", "").Execute()
 	if err != nil {
 		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in creating player")
 		return
