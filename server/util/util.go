@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"net/url"
 	"strconv"
@@ -63,4 +64,15 @@ func GenerateQuestion(destinations []Destination, nameOptions []NameOption) []Qu
 		questions = append(questions, q)
 	}
 	return questions
+}
+
+func CalculateWilsonScore(correct, total int) float64 {
+	if total == 0 {
+		return 0.0
+	}
+	p := float64(correct) / float64(total)
+	z := 1.96
+	numerator := p + (z*z)/(2*float64(total)) - z*math.Sqrt((p*(1-p)+z*z/(4*float64(total)))/float64(total))
+	denom := 1 + z*z/float64(total)
+	return numerator / denom
 }
