@@ -17,3 +17,21 @@ type Player struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
+
+type Destination struct {
+	ID      int      `json:"id"`
+	City    string   `json:"city"`
+	Country string   `json:"country"`
+	Clues   []string `json:"clues"`
+}
+
+type NameOption struct {
+	City    string `json:"city"`
+	Country string `json:"country"`
+}
+
+type Question struct {
+	QuestionID    int      `json:"question_id"`
+	QuestionHints []string `json:"question_hints"`
+	AnswerOptions []string `json:"answer_options"`
+}

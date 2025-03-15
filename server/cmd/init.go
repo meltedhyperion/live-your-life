@@ -76,6 +76,8 @@ func InitDB(app *App) {
 		logger.Log.Error(err)
 		app.DB = client
 	}
+	app.DB = client
+	logger.Log.Info("DB initialized")
 }
 
 func loggerMiddleware(logger *logrus.Logger) func(next http.Handler) http.Handler {
