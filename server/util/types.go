@@ -8,7 +8,7 @@ type CreatePlayerReq struct {
 }
 
 type Player struct {
-	ID             string  `json:"id"`
+	ID             string    `json:"id"`
 	Name           string    `json:"name"`
 	Avatar         string    `json:"avatar"`
 	CorrectAnswers int       `json:"correct_answers"`
@@ -53,4 +53,13 @@ type CheckAnswerResponse struct {
 	CorrectAnswers int      `json:"correct_answers"`
 	TotalAttempts  int      `json:"total_attempts"`
 	Score          float64  `json:"score"`
+}
+
+type FriendRequest struct {
+	FriendID string `json:"friend_id"`
+}
+
+type AddFriend struct {
+	Player1ID string `json:"player1_id"`
+	Player2ID string `json:"player2_id"`
 }
