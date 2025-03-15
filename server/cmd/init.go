@@ -16,6 +16,7 @@ import (
 	"github.com/meltedhyperion/globetrotter/server/util"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+	"github.com/supabase-community/supabase-go"
 )
 
 func InitConfig() {
@@ -66,6 +67,14 @@ func InitServer(app *App) {
 	fmt.Print("\t\tRegistered Routes: \n\n")
 	if err := chi.Walk(r, walkFunc); err != nil {
 		fmt.Printf("Error logging routes. Err: %s\n", err.Error())
+	}
+}
+
+func InitDB(app *App) {
+	client, err := supabase.NewClient(os.Getenv("SUPABASE_URL"), os.Getenv("SUPABASE_ANON_KEY"), &supabase.ClientOptions{})
+	if err != nil {
+		logger.Log.Error(err)
+		app.DB = client
 	}
 }
 
