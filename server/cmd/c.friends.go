@@ -38,16 +38,23 @@ func (app *App) handleMakeFriend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addFriend := util.AddFriend{
+	addFriendA := util.AddFriend{
 		Player1ID: playerId,
 		Player2ID: friendId,
 	}
 
-	resp, _, err = app.DB.From("friends").Insert(addFriend, false, "", "", "").Execute()
+	resp, _, err = app.DB.From("friends").Insert(addFriendA, false, "", "", "").Execute()
 	if err != nil {
 		sendErrorResponse(w, http.StatusConflict, nil, "Friend already exists")
 		return
 	}
+
+	addFriendB := util.AddFriend{
+		Player1ID: friendId,
+		Player2ID: playerId,
+	}
+
+	_, _, _ = app.DB.From("friends").Insert(addFriendB, false, "", "", "").Execute()
 
 	sendResponse(w, http.StatusOK, resp, "Friend added successfully")
 
