@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 	"time"
-
+	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"github.com/meltedhyperion/globetrotter/server/util"
 )
@@ -46,13 +46,20 @@ func (app *App) handleCreatePlayer(w http.ResponseWriter, r *http.Request) {
 
 func (app *App) handleGetPlayerById(w http.ResponseWriter, r *http.Request) {
 	playerId := chi.URLParam(r, "player_id")
-
-	filterBuilder := app.DB.From("players").Select("*", "exact", false).Eq("id", playerId)
-	resp, _, err := filterBuilder.Execute()
+	var player []util.Player
+	resp, _, err := app.DB.From("players").Select("*", "exact", false).Eq("id", playerId).Execute()
 	if err != nil {
 		sendErrorResponse(w, http.StatusInternalServerError, nil, "Error in getting player")
 		return
 	}
-
-	sendResponse(w, http.StatusOK, resp, "Player fetched successfully")
+	err = json.Unmarshal(resp, &player)
+	if err != nil {
+		sendErrorResponse(w, http.StatusInternalServerError, nil, "Error in getting player")
+		return
+	}
+	if len(player) == 0 {
+		sendErrorResponse(w, http.StatusNotFound, nil, "Player not found")
+		return
+	}
+	sendResponse(w, http.StatusOK, player[0], "Player fetched successfully")
 }

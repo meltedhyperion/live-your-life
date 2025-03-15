@@ -21,7 +21,7 @@ func (app *App) handleGetQuestions(w http.ResponseWriter, r *http.Request) {
 	var destinations []util.Destination
 
 	result, _, err := app.DB.From("destinations").
-		Select("*", "RANDOM()", false).Limit(5, "").Execute()
+		Select("id, city, country,clues", "RANDOM()", false).Limit(5, "").Execute()
 
 	if err != nil {
 		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "failed to fetch destinations")
