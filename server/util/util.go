@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
@@ -75,4 +76,26 @@ func CalculateWilsonScore(correct, total int) float64 {
 	numerator := p + (z*z)/(2*float64(total)) - z*math.Sqrt((p*(1-p)+z*z/(4*float64(total)))/float64(total))
 	denom := 1 + z*z/float64(total)
 	return numerator / denom
+}
+
+func ParseDestinations(data string) ([]Destination, error) {
+	var rawDestinations []RawDestination
+	if err := json.Unmarshal([]byte(data), &rawDestinations); err != nil {
+		return nil, err
+	}
+
+	var destinations []Destination
+	for _, raw := range rawDestinations {
+		var clues []string
+		if err := json.Unmarshal([]byte(raw.Clues), &clues); err != nil {
+			return nil, err
+		}
+		destinations = append(destinations, Destination{
+			ID:      raw.ID,
+			City:    raw.City,
+			Country: raw.Country,
+			Clues:   clues,
+		})
+	}
+	return destinations, nil
 }

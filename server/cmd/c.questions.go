@@ -21,17 +21,11 @@ func HandleQuestionRoutes(app *App) http.Handler {
 func (app *App) handleGetQuestions(w http.ResponseWriter, r *http.Request) {
 	var destinations []util.Destination
 
-	result, _, err := app.DB.From("destinations").
-		Select("id, city, country,clues", "RANDOM()", false).Limit(5, "").Execute()
+	res := app.DB.Rpc("get_random_destinations", "", nil)
 
+	destinations, err := util.ParseDestinations(res)
 	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "failed to fetch destinations")
-		return
-	}
-
-	err = json.Unmarshal(result, &destinations)
-	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, nil, "failed to unmarshal destinations")
+		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "failed to parse destinations")
 		return
 	}
 
@@ -48,7 +42,7 @@ func (app *App) handleGetQuestions(w http.ResponseWriter, r *http.Request) {
 	excludeIDsStr := util.ConvertIntSliceToPostgresArray(excludeIDs)
 
 	var nameOptions []util.NameOption
-	result, _, err = app.DB.From("destinations").
+	result, _, err := app.DB.From("destinations").
 		Select("city, country", "RANDOM()", false).
 		Not("id", "in", excludeIDsStr).
 		Limit(15, "").

@@ -78,3 +78,10 @@ type Leaderboard struct {
 type FriendsIDs struct {
 	FriendID string `json:"player2_id"`
 }
+
+type RawDestination struct {
+	ID      int    `json:"id"`
+	City    string `json:"city"`
+	Country string `json:"country"`
+	Clues   string `json:"clues"`
+}
