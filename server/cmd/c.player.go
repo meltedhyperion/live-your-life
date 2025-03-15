@@ -41,7 +41,7 @@ func (app *App) handleCreatePlayer(w http.ResponseWriter, r *http.Request) {
 	}
 	body, err := getBodyWithType[util.CreatePlayerReq](r)
 	if err != nil {
-		sendErrorResponse(w, http.StatusBadRequest, nil, err.Error())
+		sendHerrorResponse(w, err)
 		return
 	}
 	avatar := util.GenerateAvatar(playerId)

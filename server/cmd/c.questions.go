@@ -83,7 +83,7 @@ func (app *App) handleCheckAnswer(w http.ResponseWriter, r *http.Request) {
 
 	body, err := getBodyWithType[util.CheckAnswerRequest](r)
 	if err != nil {
-		sendErrorResponse(w, http.StatusBadRequest, nil, err.Error())
+		sendHerrorResponse(w, err)
 		return
 	}
 

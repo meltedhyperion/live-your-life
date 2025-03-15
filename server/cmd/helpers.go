@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 var (
@@ -56,4 +57,21 @@ func getBodyWithType[T any](r *http.Request) (T, error) {
 
 func newError(status int, message string) error {
 	return fmt.Errorf("%d %s", status, message)
+}
+
+func sendHerrorResponse(rw http.ResponseWriter, err error) {
+	status, message := parseError(err)
+	sendErrorResponse(rw, status, nil, message)
+}
+
+func parseError(herr error) (int, string) {
+	errStr := herr.Error()
+	if len(errStr) < 3 {
+		return 500, ""
+	}
+	status, err := strconv.Atoi(errStr[0:3])
+	if err != nil {
+		return 500, ""
+	}
+	return status, errStr[4:]
 }
