@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -36,4 +38,22 @@ func sendErrorResponse(rw http.ResponseWriter, status int, data interface{}, mes
 		Data:    data})
 
 	rw.Write(out)
+}
+
+func getBodyWithType[T any](r *http.Request) (T, error) {
+	var v T
+	body, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		return v, newError(http.StatusBadRequest, ErrCouldNotReadBody.Error())
+	}
+	err = json.Unmarshal(body, &v)
+	if err != nil {
+		return v, newError(http.StatusBadRequest, ErrCouldNotParseBody.Error())
+	}
+	return v, nil
+}
+
+func newError(status int, message string) error {
+	return fmt.Errorf("%d %s", status, message)
 }
