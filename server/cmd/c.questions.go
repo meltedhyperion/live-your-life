@@ -74,12 +74,17 @@ func (app *App) handleGetQuestions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) handleCheckAnswer(w http.ResponseWriter, r *http.Request) {
+	playerID, err := GetUserID(r.Context())
+	if err != nil {
+		sendErrorResponse(w, http.StatusUnauthorized, nil, "User not authenticated")
+		return
+	}
+
 	body, err := getBodyWithType[util.CheckAnswerRequest](r)
 	if err != nil {
 		sendErrorResponse(w, http.StatusBadRequest, nil, err.Error())
 		return
 	}
-	playerID := "9769c5e4-6c17-4ad6-9c50-64635d897847"
 	// playerID, err := getUserIDFromContext(r)
 	// if err != nil {
 	// 	sendErrorResponse(w, http.StatusUnauthorized, nil, "User not authenticated")

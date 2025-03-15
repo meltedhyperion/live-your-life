@@ -11,20 +11,25 @@ import (
 func HandlePlayerRoutes(app *App) http.Handler {
 	r := chi.NewRouter()
 	r.Get("/create", app.handleCreatePlayer)
-	r.Get("/{player_id}", app.handleGetPlayerById)
+	r.Get("/", app.handleGetPlayerById)
 	return r
 }
 
 func (app *App) handleCreatePlayer(w http.ResponseWriter, r *http.Request) {
+	playerId, err := GetUserID(r.Context())
+	if err != nil {
+		sendErrorResponse(w, http.StatusUnauthorized, nil, "User not authenticated")
+		return
+	}
 	body, err := getBodyWithType[util.CreatePlayerReq](r)
 	if err != nil {
 		sendErrorResponse(w, http.StatusBadRequest, nil, err.Error())
 		return
 	}
-	avatar := util.GenerateAvatar(body.UserId)
+	avatar := util.GenerateAvatar(playerId)
 
 	player := util.Player{
-		ID:             body.UserId,
+		ID:             playerId,
 		Name:           body.Name,
 		Avatar:         avatar,
 		CorrectAnswers: 0,
@@ -37,7 +42,7 @@ func (app *App) handleCreatePlayer(w http.ResponseWriter, r *http.Request) {
 	filterBuilder := app.DB.From("players").Insert(player, false, "", "representation", "")
 	resp, _, err := filterBuilder.Execute()
 	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, nil, "Error in creating player")
+		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in creating player")
 		return
 	}
 
@@ -45,16 +50,20 @@ func (app *App) handleCreatePlayer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) handleGetPlayerById(w http.ResponseWriter, r *http.Request) {
-	playerId := chi.URLParam(r, "player_id")
-	var player []util.Player
-	resp, _, err := app.DB.From("players").Select("*", "exact", false).Eq("id", playerId).Execute()
+	playerId, err := GetUserID(r.Context())
 	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, nil, "Error in getting player")
+		sendErrorResponse(w, http.StatusUnauthorized, nil, "User not authenticated")
+		return
+	}
+	var player []util.Player
+	resp, _, err := app.DB.From("players").Select("id, name, avatar, correct_answers, total_attempts, score", "exact", false).Eq("id", playerId).Execute()
+	if err != nil {
+		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in getting player")
 		return
 	}
 	err = json.Unmarshal(resp, &player)
 	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, nil, "Error in getting player")
+		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in getting player")
 		return
 	}
 	if len(player) == 0 {
