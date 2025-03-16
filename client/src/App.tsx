@@ -136,7 +136,7 @@ function App() {
     } catch (error) {
       console.error("Error fetching player:", error);
       if (!player) {
-        toast.error("Failed to load player profile");
+        // toast.error("Failed to load player profile");
       }
     }
   };
