@@ -10,3 +10,6 @@ server-dev:
 
 docker-compose-server:
 	@docker-compose -f docker-compose-server.yaml up
+
+server-run-tests:
+	@cd server && go test -v ./...
