@@ -48,6 +48,8 @@ I am going for a backend specific role and dont have as much experience in devel
 4. **Persistent UI:**  
    - The Navbar (displaying player details and navigation options) remains visible as long as the user is logged in.
 
+![image](https://github.com/user-attachments/assets/a04d10d8-bdd3-4910-a386-44c28dea4c41)
+
 ---
 # API Handler Logic
 ## 2. Create Player & Get Player Internals
