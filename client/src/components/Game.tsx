@@ -3,6 +3,7 @@ import confetti from "canvas-confetti";
 import { MapPin, Frown } from "lucide-react";
 import { Question, AnswerResponse } from "../types";
 import toast from "react-hot-toast";
+import HeadoutButton from "./HeadoutButton"; // Adjust the import path as necessary
 
 interface GameProps {
     accessToken: string;
@@ -187,12 +188,18 @@ export function Game({ accessToken, onScoreUpdate }: GameProps) {
                             </div>
                         </div>
 
-                        <button
-                            onClick={handleNext}
-                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
-                        >
-                            Next Destination
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <button
+                                onClick={handleNext}
+                                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                            >
+                                Next Destination
+                            </button>
+
+                            <HeadoutButton
+                                city={answerResult.correct_answer}
+                            />
+                        </div>
                     </div>
                 )}
             </div>
