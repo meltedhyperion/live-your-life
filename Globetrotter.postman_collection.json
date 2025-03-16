@@ -1,0 +1,185 @@
+{
+	"info": {
+		"_postman_id": "e0534a9b-e45b-4422-a5b1-26195edae03b",
+		"name": "Globetrotter",
+		"description": "Add Supabase Bearer Auth User JWT for any of the routes to work",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "19667594"
+	},
+	"item": [
+		{
+			"name": "Get answer for question",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question_id\":6,\n    \"answer\": \"Barcelona, Spain\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://globetrotter-api.aryansingh.dev/questions/check",
+					"protocol": "https",
+					"host": [
+						"globetrotter-api",
+						"aryansingh",
+						"dev"
+					],
+					"path": [
+						"questions",
+						"check"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get questions",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://globetrotter-api.aryansingh.dev/questions",
+					"protocol": "https",
+					"host": [
+						"globetrotter-api",
+						"aryansingh",
+						"dev"
+					],
+					"path": [
+						"questions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get player by id",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://globetrotter-api.aryansingh.dev/players",
+					"protocol": "https",
+					"host": [
+						"globetrotter-api",
+						"aryansingh",
+						"dev"
+					],
+					"path": [
+						"players"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add friend",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "https://globetrotter-api.aryansingh.dev/friends/9769c5e4-6c17-4ad6-9c50-64635d897847",
+					"protocol": "https",
+					"host": [
+						"globetrotter-api",
+						"aryansingh",
+						"dev"
+					],
+					"path": [
+						"friends",
+						"9769c5e4-6c17-4ad6-9c50-64635d897847"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get leaderboard",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://globetrotter-api.aryansingh.dev/players/leaderboard",
+					"protocol": "https",
+					"host": [
+						"globetrotter-api",
+						"aryansingh",
+						"dev"
+					],
+					"path": [
+						"players",
+						"leaderboard"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create player",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"Aryan Singh\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://globetrotter-api.aryansingh.dev/players/create",
+					"protocol": "https",
+					"host": [
+						"globetrotter-api",
+						"aryansingh",
+						"dev"
+					],
+					"path": [
+						"players",
+						"create"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjFBN2ZrTnlRdzVFcVFISksiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2VsaGJmZXh1bW5laWtsbWFnaHRxLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI4YzA3MDQ0NS03ZmRkLTRkMDAtYjFkMC0zODdkNGFkNmExOWEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzQyMDg3NTQ2LCJpYXQiOjE3NDIwODM5NDYsImVtYWlsIjoibWVsdGVkLmh5cGVyaW9uLjA3QGdtYWlsLmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiZW1haWwiOiJtZWx0ZWQuaHlwZXJpb24uMDdAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBob25lX3ZlcmlmaWVkIjpmYWxzZSwic3ViIjoiOGMwNzA0NDUtN2ZkZC00ZDAwLWIxZDAtMzg3ZDRhZDZhMTlhIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NDIwNzk2OTZ9XSwic2Vzc2lvbl9pZCI6ImQwYmM2N2Y2LWIwNDUtNDBiYy05MzQ1LTBmNTE5YzhhYTM4YiIsImlzX2Fub255bW91cyI6ZmFsc2V9.ksMrBvF-lpEZO3rRYRbOZBjBwCIZXYzYk0PSQR2SWiE",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
