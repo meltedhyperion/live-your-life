@@ -4,6 +4,7 @@ Globetrotter Challenge is a full-stack travel guessing game where users receive 
 
 ## Table of Contents
 
+0. [Tech Stack](#tech-stack)
 1. [User Workflow](#user-workflow)
 2. [Create Player & Get Player Internals](#create-player--get-player-internals)
 3. [Invite System](#invite-system)
@@ -12,10 +13,26 @@ Globetrotter Challenge is a full-stack travel guessing game where users receive 
 6. [Check Answer](#check-answer)
 7. [Local Setup](#local-setup)
 8. [API Documentation](#api-documentation)
+9. [How I utilized AI](#how-i-utilized-ai)
+
+---
+## 0. Tech Stack
+
+Golang (chi) for backend apis
+PostgreSQL (through supabase) for database
+Supabase Auth for User Authentication
+React (Typescript) and Tailwind for frontend
+
+Using go was a personal choice. I have been using golang for more than 2 years now and it has grown on me. Plus since its a compiled language, its super fast). Chi framework was a design choice as its minimal, mostly built upon the base http package, letting me work with lightweight packages, also a good choice for production.
+
+Using supabase was because of their free teir, and, (whom to lie to), their user auth integration. made it so easy for me to authenticate users. No need to manage JWT creation or storing passowrds and other user sensitive details. Authentication is further carried out by sending email to the registering mail id. Meaning, more auth.
+Postgresql because i had very structured queries to make which should be fast enough. And for storing array as values, it mad emore sense.
+
+I am going for a backend specific role and dont have as much experience in developing frontend as i have for backend. Reach and Next are the ones I have worked with and here React felt, simple, easy to use and fast.
 
 ---
 
-## 1. User Workflow
+## 1. User Workflow 
 
 ![image](https://github.com/user-attachments/assets/386c830b-274b-4632-af48-33b8c8ede28a)
 
@@ -181,14 +198,6 @@ Authorization: Bearer <access_token>
 {
   "status": 201,
   "message": "Player created successfully",
-  "data": {
-    "id": "9769c5e4-6c17-4ad6-9c50-64635d897847",
-    "name": "john_doe",
-    "avatar": "https://api.dicebear.com/7.x/pixel-art/svg?seed=9769c5e4-6c17-4ad6-9c50-64635d897847&backgroundColor=ffd5dc&size=128",
-    "correct_answers": 0,
-    "total_attempts": 0,
-    "score": 0.0
-  }
 }
 ```
 
@@ -302,12 +311,6 @@ Authorization: Bearer <access_token>
 {
   "status": 201,
   "message": "Friend added successfully",
-  "data": {
-    "id": 123,
-    "player1_id": "9769c5e4-6c17-4ad6-9c50-64635d897847",
-    "player2_id": "another-user-id",
-    "created_at": "2025-03-15T12:34:56Z"
-  }
 }
 ```
 
@@ -348,4 +351,16 @@ Authorization: Bearer <access_token>
 }
 ```
 
+---
+## 9. How I utilized AI
+
+I used various AI tools like ChatGPT, Windsurf, V0.dev and Bolt.new. Each for different purposes.
+
+1) Chatgpt to generate dataset and asking suggestions on what apprach to go for in cases. Ex: Batching of 5 questions in 1 request to limit the number of API calls. Use of Wilson score interval method for calculation of scores for effective rankings. It also helped in writing down this README ;p
+
+2) Windsurf as my primary code editor, for auto code completions for productivity.
+
+3) I used Bolt.new at the very start, prompting it the challenge statement to visualize what kind of application and functionality is expected. As I am not applying for Frontend (also not very fluent in it), I used its code as a starter to include more functionalities like leaderboard, auth components.
+
+4) I used V0.dev for creating several components. Auth, Game page and leaderboard.
 ---
