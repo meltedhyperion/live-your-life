@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 // Test for InitConfig
@@ -78,9 +78,13 @@ func TestInitDB(t *testing.T) {
 func TestLoggerMiddleware(t *testing.T) {
 	// Create a bytes.Buffer to capture log output.
 	var buf bytes.Buffer
-	testLogger := logrus.New()
-	testLogger.SetFormatter(&logrus.JSONFormatter{})
-	testLogger.SetOutput(&buf)
+	zapLogger, err := zap.NewDevelopment()
+	if err != nil {
+		t.Fatal("Failed to create Zap logger:", err)
+	}
+	defer zapLogger.Sync()
+
+	testLogger := zapLogger.Sugar()
 
 	// Create a dummy next handler that writes a response and sets headers.
 	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

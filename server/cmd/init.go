@@ -15,8 +15,8 @@ import (
 	"github.com/meltedhyperion/globetrotter/server/logger"
 	"github.com/meltedhyperion/globetrotter/server/util"
 	"github.com/rs/cors"
-	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"
+	"go.uber.org/zap"
 )
 
 func InitConfig() {
@@ -28,12 +28,7 @@ func InitConfig() {
 func InitServer(app *App) {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.JSONFormatter{})
-	logger.SetOutput(os.Stdout)
-
-	r.Use(loggerMiddleware(logger))
+	r.Use(loggerMiddleware(logger.Log))
 
 	// setup cors
 	r.Use(cors.New(cors.Options{
@@ -80,14 +75,14 @@ func InitDB(app *App) {
 	logger.Log.Info("DB initialized")
 }
 
-func loggerMiddleware(logger *logrus.Logger) func(next http.Handler) http.Handler {
+func loggerMiddleware(logger *zap.SugaredLogger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var requestBody []byte
 			if r.Body != nil {
 				body, err := io.ReadAll(r.Body)
 				if err != nil {
-					logger.WithError(err).Error("Error reading request body")
+					logger.Errorw("Error reading request body", "error", err)
 				}
 				requestBody = body
 				r.Body = io.NopCloser(bytes.NewReader(body))
@@ -109,16 +104,15 @@ func loggerMiddleware(logger *logrus.Logger) func(next http.Handler) http.Handle
 				}
 			}
 			next.ServeHTTP(w, r)
-			logEntry := logrus.Fields{
-				"request_headers":     requestHeaders,
-				"request_method":      r.Method,
-				"request_url":         r.URL.String(),
-				"request_query":       queryParams,
-				"request_payload":     string(requestBody),
-				"response_status":     w.Header().Get("Status"),
-				"response_statuscode": w.Header().Get("StatusCode"),
-			}
-			logger.WithFields(logEntry).Info("HTTP Request")
+			logger.Infow("HTTP Request",
+				"request_headers", requestHeaders,
+				"request_method", r.Method,
+				"request_url", r.URL.String(),
+				"request_query", queryParams,
+				"request_payload", string(requestBody),
+				"response_status", w.Header().Get("Status"),
+				"response_statuscode", w.Header().Get("StatusCode"),
+			)
 		})
 	}
 }
