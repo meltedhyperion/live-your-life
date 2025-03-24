@@ -60,6 +60,12 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             Globetrotter
           </h1>
         </div>
+        {!isLogin && (
+          <div className="text-sm text-gray-500 mb-4 -mt-3">
+            Please use your authentic email as you will need to confirm your
+            account.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
