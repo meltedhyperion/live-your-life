@@ -121,16 +121,22 @@ func (app *App) handleCheckAnswer(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, http.StatusNotFound, nil, "Player not found")
 		return
 	}
-
+	var correctAnswers int
 	player[0].TotalAttempts++
 	if isCorrect {
 		player[0].CorrectAnswers++
+		correctAnswers = player[0].CorrectAnswers
 	}
 	player[0].Score = util.CalculateWilsonScore(player[0].CorrectAnswers, player[0].TotalAttempts)
-	player[0].UpdatedAt = time.Now()
+	updateScore := util.UpdatePlayer{
+		CorrectAnswers: correctAnswers,
+		TotalAttempts:  player[0].TotalAttempts,
+		Score:          player[0].Score,
+		UpdatedAt:      time.Now(),
+	}
 
 	_, _, err = app.DB.From("players").
-		Update(player[0], "", "").
+		Update(updateScore, "", "").
 		Eq("id", playerID).
 		Execute()
 	if err != nil {

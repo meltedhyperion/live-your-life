@@ -17,6 +17,12 @@ type Player struct {
 	UpdatedAt      time.Time `json:"updated_at,omitempty"`
 }
 
+type UpdatePlayer struct {
+	CorrectAnswers int       `json:"correct_answers"`
+	TotalAttempts  int       `json:"total_attempts"`
+	Score          float64   `json:"score"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
 type Destination struct {
 	ID        int       `json:"id"`
 	City      string    `json:"city"`
