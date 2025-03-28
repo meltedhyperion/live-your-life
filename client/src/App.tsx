@@ -8,14 +8,43 @@ import { Game } from "./components/Game";
 import { Leaderboard } from "./components/Leaderboard";
 import { Player, LeaderboardResponse } from "./types";
 
+const useImageSlider = (interval = 5000) => {
+  const images = [
+    "scenes/1.png",
+    "scenes/2.png",
+    "scenes/3.png",
+    "scenes/4.png",
+    "scenes/5.png",
+    "scenes/6.png",
+    "scenes/7.png",
+    "scenes/8.png",
+  ];
+  const [currentImage, setCurrentImage] = useState(images[0]);
+
+  useEffect(() => {
+    const imageInterval = setInterval(() => {
+      setCurrentImage((prevImage) => {
+        const currentIndex = images.indexOf(prevImage);
+        const nextIndex = (currentIndex + 1) % images.length;
+        return images[nextIndex];
+      });
+    }, interval);
+
+    return () => clearInterval(imageInterval);
+  }, [images, interval]);
+
+  return currentImage;
+};
+
 function App() {
-  const [session, setSession] = useState < any > (null);
-  const [player, setPlayer] = useState < Player | null > (null);
+  const [session, setSession] = useState<any>(null);
+  const [player, setPlayer] = useState<Player | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [leaderboard, setLeaderboard] = useState < LeaderboardResponse | null > (
+  const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(
     null
   );
   const [isLoading, setIsLoading] = useState(true);
+  const currentBackground = useImageSlider();
 
   // Fetch session and player on mount
   useEffect(() => {
@@ -188,15 +217,18 @@ function App() {
   if (!session) {
     return (
       <>
-        <AuthForm onAuthSuccess={() => { }} />
+        <AuthForm onAuthSuccess={() => {}} />
         <Toaster position="top-center" />
       </>
     );
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen bg-cover bg-no-repeat bg-center transition-opacity duration-1000 ease-in-out"
+      style={{ backgroundImage: `url(${currentBackground})` }}
+    >
+      <div className="min-h-screen">
         <Toaster position="top-center" />
         {/* Always render Navbar once logged in; Navbar can handle a null player gracefully */}
         <Navbar
@@ -217,14 +249,14 @@ function App() {
           />
         )}
       </div>
-      <footer className="fixed bottom-0 left-0 right-0 text-center p-4 text-sm text-gray-600">
+      <footer className="fixed bottom-0 left-0 right-0 text-center p-4 text-sm text-white">
         Made with{" "}
         <span role="img" aria-label="heart" className="text-red-500">
           ❤️
         </span>{" "}
         by aryansingh.dev
       </footer>
-    </>
+    </div>
   );
 }
 

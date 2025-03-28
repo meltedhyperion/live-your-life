@@ -1,4 +1,4 @@
-- [ ] Invite link doesnt work directly if user is registere=ing using that link.
+- [ ] Invite link doesnt work directly if user is registering using that link.
 
   - using session to check for invite code.
   - is not retained when redirect to game page is used after register.
@@ -11,11 +11,11 @@
   - game should start without even asking for login or register. player can play the game, and then to save their score, can login in/register.
   - should think of securing the score saving in client side. So that user cannot manipulate the score from browser application side (inspect element).
 
-- [ ] Fix created_at timestamp update to null issue while answering questions.
+- [x] Fix created_at timestamp update to null issue while answering questions.
 
 - [ ] Some way to store which questions have already been attempted by the player, and when getting set of 5 question at random, add exception clause for the attempted questions. If less than 5 non attempted questions are left, send all of them. if none are left. Send error with "quiz completed by the user".
 
-- [ ] Background image change with fade throttle.
+- [x] Background image change with fade throttle.
 
 - [x] Save logs to file
 - [ ] Critical Bug: If a player registers with any email of x@y.z and some other user has the same x, they will be sharing the player account, along with friends and score. [Easy Fix: store the complete email instead of just the username, amnd in the frontend just display its username (genrated at clientside)]
