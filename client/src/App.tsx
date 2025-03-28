@@ -19,21 +19,27 @@ const useImageSlider = (interval = 5000) => {
     "scenes/7.png",
     "scenes/8.png",
   ];
-  const [currentImage, setCurrentImage] = useState(images[0]);
 
   useEffect(() => {
-    const imageInterval = setInterval(() => {
-      setCurrentImage((prevImage) => {
-        const currentIndex = images.indexOf(prevImage);
-        const nextIndex = (currentIndex + 1) % images.length;
-        return images[nextIndex];
-      });
+    images.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, [images]);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const sliderInterval = setInterval(() => {
+      setTimeout(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+      }, 500);
     }, interval);
 
-    return () => clearInterval(imageInterval);
+    return () => clearInterval(sliderInterval);
   }, [images, interval]);
 
-  return currentImage;
+  return images[currentIndex];
 };
 
 function App() {
