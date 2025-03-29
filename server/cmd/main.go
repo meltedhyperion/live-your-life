@@ -3,13 +3,13 @@ package main
 import (
 	"net/http"
 
+	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
 	"github.com/meltedhyperion/globetrotter/server/logger"
-	"github.com/supabase-community/supabase-go"
 )
 
 type App struct {
-	Srv *http.Server
-	DB  *supabase.Client
+	Srv   *http.Server
+	store *pg_db.Store
 }
 
 func main() {

@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,10 +14,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
+	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
 	"github.com/meltedhyperion/globetrotter/server/logger"
 	"github.com/meltedhyperion/globetrotter/server/util"
 	"github.com/rs/cors"
-	"github.com/supabase-community/supabase-go"
 	"go.uber.org/zap"
 )
 
@@ -66,13 +68,21 @@ func InitServer(app *App) {
 }
 
 func InitDB(app *App) {
-	client, err := supabase.NewClient(os.Getenv("SUPABASE_URL"), os.Getenv("SUPABASE_ANON_KEY"), &supabase.ClientOptions{})
+	logger.Log.Info("connecting to db")
+	tDB, err := sql.Open("postgres", os.Getenv("DB_URI"))
 	if err != nil {
-		logger.Log.Error(err)
-		app.DB = client
+		logger.Log.Fatal("CANNOT INIT DB", err)
 	}
-	app.DB = client
-	logger.Log.Info("DB initialized")
+	err = tDB.Ping()
+	if err != nil {
+		logger.Log.Fatal("CANNOT PING DB", err)
+	}
+	q, err := pg_db.Prepare(context.Background(), tDB)
+	if err != nil {
+		logger.Log.Fatal("CANNOT PREPARE DB", err)
+	}
+	logger.Log.Info("connected to pg db")
+	app.store = pg_db.NewStore(tDB, q)
 }
 
 func loggerMiddleware(logger *zap.SugaredLogger) func(next http.Handler) http.Handler {

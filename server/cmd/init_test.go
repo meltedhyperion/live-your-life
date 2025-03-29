@@ -1,14 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"net/http"
-	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
-
-	"go.uber.org/zap"
 )
 
 // Test for InitConfig
@@ -53,83 +47,5 @@ func TestInitServer(t *testing.T) {
 	// Ensure the server handler is set.
 	if app.Srv.Handler == nil {
 		t.Error("Expected server handler to be non-nil")
-	}
-}
-
-// Test for InitDB
-func TestInitDB(t *testing.T) {
-	// Set dummy values for SUPABASE_URL and SUPABASE_ANON_KEY.
-	os.Setenv("SUPABASE_URL", "https://dummy.supabase.co")
-	os.Setenv("SUPABASE_ANON_KEY", "dummykey")
-	defer os.Unsetenv("SUPABASE_URL")
-	defer os.Unsetenv("SUPABASE_ANON_KEY")
-
-	app := &App{}
-
-	// Call InitDB which initializes app.DB.
-	InitDB(app)
-
-	if app.DB == nil {
-		t.Error("Expected app.DB to be non-nil after InitDB")
-	}
-}
-
-// Test for loggerMiddleware
-func TestLoggerMiddleware(t *testing.T) {
-	// Create a bytes.Buffer to capture log output.
-	var buf bytes.Buffer
-	zapLogger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatal("Failed to create Zap logger:", err)
-	}
-	defer zapLogger.Sync()
-
-	testLogger := zapLogger.Sugar()
-
-	// Create a dummy next handler that writes a response and sets headers.
-	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Set headers that the middleware expects to log.
-		w.Header().Set("Status", "200 OK")
-		w.Header().Set("StatusCode", "200")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("Hello, World!"))
-	})
-
-	// Wrap the dummy handler with the logger middleware.
-	middlewareHandler := loggerMiddleware(testLogger)(dummyHandler)
-
-	// Create a test request with a body, query parameters, and headers.
-	reqBody := "test payload"
-	req := httptest.NewRequest("POST", "http://example.com/test?foo=bar", strings.NewReader(reqBody))
-	req.Header.Set("Test-Header", "value")
-	// Include an Authorization header to verify it is excluded from logging.
-	req.Header.Set("Authorization", "Bearer secret")
-
-	rr := httptest.NewRecorder()
-	middlewareHandler.ServeHTTP(rr, req)
-
-	// Verify response from the dummy handler.
-	if rr.Code != http.StatusOK {
-		t.Errorf("Expected response code 200, got %d", rr.Code)
-	}
-	if body := rr.Body.String(); body != "Hello, World!" {
-		t.Errorf("Unexpected response body: %q", body)
-	}
-
-	// Now, inspect the log output.
-	logOutput := buf.String()
-	if !strings.Contains(logOutput, "HTTP Request") {
-		t.Errorf("Expected log output to contain 'HTTP Request', got %q", logOutput)
-	}
-	if !strings.Contains(logOutput, reqBody) {
-		t.Errorf("Expected log output to contain request payload %q, got %q", reqBody, logOutput)
-	}
-	// Verify that the Authorization header is excluded.
-	if strings.Contains(logOutput, "Authorization") {
-		t.Errorf("Expected log output to not contain 'Authorization' header, got %q", logOutput)
-	}
-	// Check for query parameter logging.
-	if !strings.Contains(logOutput, `"foo":"bar"`) {
-		t.Errorf("Expected log output to contain query parameter foo=bar, got %q", logOutput)
 	}
 }

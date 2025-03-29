@@ -1,13 +1,14 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
 	"github.com/meltedhyperion/globetrotter/server/util"
 )
 
@@ -19,14 +20,9 @@ func HandleQuestionRoutes(app *App) http.Handler {
 }
 
 func (app *App) handleGetQuestions(w http.ResponseWriter, r *http.Request) {
-	var destinations []util.Destination
-
-	res := app.DB.Rpc("get_random_destinations", "", nil)
-
-	destinations, err := util.ParseDestinations(res)
+	destinations, err := app.store.GetRandomDestinationsForQuestions(context.Background())
 	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "failed to parse destinations")
-		return
+		sendErrorResponse(w, http.StatusInternalServerError, err, "Error in getting questions")
 	}
 
 	if len(destinations) < 5 {
@@ -35,29 +31,14 @@ func (app *App) handleGetQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var excludeIDs []int
+	var excludeIDs []int32
 	for _, d := range destinations {
 		excludeIDs = append(excludeIDs, d.ID)
 	}
-	excludeIDsStr := util.ConvertIntSliceToPostgresArray(excludeIDs)
-
-	var nameOptions []util.NameOption
-	result, _, err := app.DB.From("destinations").
-		Select("city, country", "RANDOM()", false).
-		Not("id", "in", excludeIDsStr).
-		Limit(15, "").
-		Execute()
+	nameOptions, err := app.store.GetRandomDestinations(context.Background(), excludeIDs)
 	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "failed to fetch name options")
-		return
+		sendErrorResponse(w, http.StatusInternalServerError, err, "Error in getting questions")
 	}
-
-	err = json.Unmarshal(result, &nameOptions)
-	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, nil, "failed to unmarshal name options")
-		return
-	}
-
 	if len(nameOptions) < 3 {
 		sendErrorResponse(w, http.StatusInternalServerError, nil, "Not enough name options available")
 		return
@@ -81,64 +62,42 @@ func (app *App) handleCheckAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var destination []util.Destination
-	result, _, err := app.DB.From("destinations").
-		Select("id, city, country, clues, fun_facts, trivia", "", false).
-		Eq("id", strconv.Itoa(body.QuestionID)).
-		Execute()
+	destination, err := app.store.GetDestinationByID(context.Background(), int32(body.QuestionID))
 	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, nil, "Failed to fetch destination")
-		return
+		sendErrorResponse(w, http.StatusInternalServerError, err, "Error in getting questions")
 	}
-	if err := json.Unmarshal(result, &destination); err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, nil, "Failed to unmarshal destination")
-		return
-	}
-
-	if destination[0].ID == 0 {
+	if destination == nil {
 		sendErrorResponse(w, http.StatusNotFound, nil, "Question not found")
 		return
 	}
 
-	correctAnswer := fmt.Sprintf("%s, %s", destination[0].City, destination[0].Country)
+	correctAnswer := fmt.Sprintf("%s, %s", destination.City, destination.Country)
 
 	isCorrect := (body.Answer == correctAnswer)
 
-	var player []util.Player
-	result, _, err = app.DB.From("players").
-		Select("id,score,avatar,name,correct_answers,total_attempts", "", false).
-		Eq("id", playerID).
-		Execute()
+	player, err := app.store.GetPlayerById(context.Background(), uuid.MustParse(playerID))
 	if err != nil {
 		sendErrorResponse(w, http.StatusInternalServerError, nil, "Failed to fetch player record")
 		return
 	}
-	if err := json.Unmarshal(result, &player); err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, nil, "Failed to unmarshal player record")
-		return
-	}
-	if len(player) == 0 {
+	if player == nil {
 		sendErrorResponse(w, http.StatusNotFound, nil, "Player not found")
 		return
 	}
-	var correctAnswers int
-	player[0].TotalAttempts++
+	player.TotalAttempts++
 	if isCorrect {
-		player[0].CorrectAnswers++
-		correctAnswers = player[0].CorrectAnswers
+		player.CorrectAnswers++
 	}
-	player[0].Score = util.CalculateWilsonScore(player[0].CorrectAnswers, player[0].TotalAttempts)
-	updateScore := util.UpdatePlayer{
-		CorrectAnswers: correctAnswers,
-		TotalAttempts:  player[0].TotalAttempts,
-		Score:          player[0].Score,
+	player.Score = util.CalculateWilsonScore(player.CorrectAnswers, player.TotalAttempts)
+	updateScore := &pg_db.UpdatePlayerScoreParams{
+		CorrectAnswers: player.CorrectAnswers,
+		TotalAttempts:  player.TotalAttempts,
+		Score:          player.Score,
 		UpdatedAt:      time.Now(),
+		ID:             player.ID,
 	}
 
-	_, _, err = app.DB.From("players").
-		Update(updateScore, "", "").
-		Eq("id", playerID).
-		Execute()
+	err = app.store.UpdatePlayerScore(context.Background(), updateScore)
 	if err != nil {
 		sendErrorResponse(w, http.StatusInternalServerError, nil, "Failed to update player record")
 		return
@@ -146,12 +105,12 @@ func (app *App) handleCheckAnswer(w http.ResponseWriter, r *http.Request) {
 
 	resp := util.CheckAnswerResponse{
 		Correct:        isCorrect,
-		FunFacts:       destination[0].FunFacts,
-		Trivia:         destination[0].Trivia,
+		FunFacts:       destination.FunFacts,
+		Trivia:         destination.Trivia,
 		CorrectAnswer:  correctAnswer,
-		CorrectAnswers: player[0].CorrectAnswers,
-		TotalAttempts:  player[0].TotalAttempts,
-		Score:          player[0].Score,
+		CorrectAnswers: player.CorrectAnswers,
+		TotalAttempts:  player.TotalAttempts,
+		Score:          player.Score,
 	}
 
 	sendResponse(w, http.StatusOK, resp, "Answer checked successfully")
