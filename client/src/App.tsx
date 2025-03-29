@@ -147,8 +147,8 @@ function App() {
           toast.success("Friend added successfully!");
           localStorage.removeItem("inviteCode");
         } catch (error) {
-          console.error("Error adding friend:", error);
-          toast.error("Failed to add friend");
+          // console.error("Error adding friend:", error);
+          // toast.error("Failed to add friend");
         }
       }
     };
