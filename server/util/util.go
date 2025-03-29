@@ -71,9 +71,6 @@ func CalculateWilsonScore(correct, total int32) float64 {
 func CheckAnswerToQuestionID(store *pg_db.Store, questionID int32, answer string) (bool, FunFactsAndTrivia, error) {
 	destination, err := store.GetDestinationByID(context.Background(), questionID)
 	if err != nil {
-		return false, FunFactsAndTrivia{}, fmt.Errorf("%d %s", http.StatusInternalServerError, "Error in getting questions")
-	}
-	if destination == nil {
 		return false, FunFactsAndTrivia{}, fmt.Errorf("%d %s", http.StatusNotFound, "Question not found")
 	}
 

@@ -15,6 +15,7 @@ func HandleQuestionRoutes(app *App) http.Handler {
 	r := chi.NewRouter()
 	r.Get("/", app.handleGetQuestions)
 	r.With(AuthMiddleware).Post("/check", app.handleCheckAnswer)
+	r.Post("/check/guest", app.handleCheckAnswerForGuest)
 	return r
 }
 
@@ -109,4 +110,25 @@ func (app *App) handleCheckAnswer(w http.ResponseWriter, r *http.Request) {
 
 	sendResponse(w, http.StatusOK, resp, "Answer checked successfully")
 
+}
+
+func (app *App) handleCheckAnswerForGuest(w http.ResponseWriter, r *http.Request) {
+	body, err := getBodyWithType[util.CheckAnswerRequest](r)
+	if err != nil {
+		sendHerrorResponse(w, err)
+		return
+	}
+
+	isCorrect, destination, err := util.CheckAnswerToQuestionID(app.store, int32(body.QuestionID), body.Answer)
+	if err != nil {
+		sendHerrorResponse(w, err)
+		return
+	}
+	resp := util.CheckAnswerResponse{
+		Correct:       isCorrect,
+		FunFacts:      destination.FunFacts,
+		Trivia:        destination.Trivia,
+		CorrectAnswer: destination.CorrectAnswer,
+	}
+	sendResponse(w, http.StatusOK, resp, "Answer checked successfully")
 }

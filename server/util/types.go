@@ -26,9 +26,9 @@ type CheckAnswerResponse struct {
 	FunFacts       json.RawMessage `json:"fun_facts"`
 	Trivia         json.RawMessage `json:"trivia"`
 	CorrectAnswer  string          `json:"correct_answer"`
-	CorrectAnswers int32           `json:"correct_answers"`
-	TotalAttempts  int32           `json:"total_attempts"`
-	Score          float64         `json:"score"`
+	CorrectAnswers int32           `json:"correct_answers,omitempty"`
+	TotalAttempts  int32           `json:"total_attempts,omitempty"`
+	Score          float64         `json:"score,omitempty"`
 }
 
 type Leaderboard struct {
