@@ -18,8 +18,7 @@
 - [x] Background image change with fade throttle.
 
 - [x] Save logs to file
-- [ ] Critical Bug: If a player registers with any email of x@y.z and some other user has the same x, they will be sharing the player account, along with friends and score. [Easy Fix: store the complete email instead of just the username, amnd in the frontend just display its username (genrated at clientside)]
 
-- [ ] Query Improvement: Make the name UNIQUE (reduces 1 query to check for already present names)
-- [ ] Bug: The options generated from 15 random destinations (excuding the 5 questions) are not random. They are the first non included 15 questions from the table, which is repetitive. ORDER BY RANDOM() does not work in supabase go client.
-- [ ] Migrate to raw postgres connection rather than using supabase client for go.
+- [x] Bug: The options generated from 15 random destinations (excuding the 5 questions) are not random. They are the first non included 15 questions from the table, which is repetitive. ORDER BY RANDOM() does not work in supabase go client.
+
+- [x] Migrate to raw postgres connection rather than using supabase client for go.
