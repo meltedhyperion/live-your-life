@@ -1,4 +1,4 @@
-- [ ] Invite link doesnt work directly if user is registering using that link.
+- [x] Invite link doesnt work directly if user is registering using that link.
 
   - using session to check for invite code.
   - is not retained when redirect to game page is used after register.

@@ -117,16 +117,21 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Handle invite code (runs whenever session changes)
   useEffect(() => {
     const handleInviteCode = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const inviteCode = urlParams.get("invite-code");
+      const inviteCodeFromUrl = urlParams.get("invite-code");
 
-      if (inviteCode && session) {
+      if (inviteCodeFromUrl) {
+        localStorage.setItem("inviteCode", inviteCodeFromUrl);
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+
+      const storedInviteCode = localStorage.getItem("inviteCode");
+      if (storedInviteCode && session) {
         try {
           const response = await fetch(
-            `${import.meta.env.VITE_BACKEND_API}/friends/${inviteCode}`,
+            `${import.meta.env.VITE_BACKEND_API}/friends/${storedInviteCode}`,
             {
               method: "POST",
               headers: {
@@ -140,11 +145,10 @@ function App() {
           }
 
           toast.success("Friend added successfully!");
-          // Remove the invite code from the URL
-          window.history.replaceState({}, "", window.location.pathname);
+          localStorage.removeItem("inviteCode");
         } catch (error) {
-          // console.error("Error adding friend:", error);
-          // toast.error("Failed to add friend");
+          console.error("Error adding friend:", error);
+          toast.error("Failed to add friend");
         }
       }
     };
