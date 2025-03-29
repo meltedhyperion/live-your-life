@@ -60,9 +60,11 @@ func (app *App) handleGetPlayerById(w http.ResponseWriter, r *http.Request) {
 	player, err := app.store.GetPlayerById(context.Background(), uuid.MustParse(playerId))
 	if err != nil {
 		sendErrorResponse(w, http.StatusInternalServerError, err, "Error in getting player data")
+		return
 	}
 	if player == nil {
 		sendErrorResponse(w, http.StatusNotFound, nil, "Player Data Not Found")
+		return
 	}
 	sendResponse(w, http.StatusOK, player, "Player fetched successfully")
 }

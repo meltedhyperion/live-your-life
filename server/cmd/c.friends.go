@@ -24,11 +24,13 @@ func (app *App) handleMakeFriend(w http.ResponseWriter, r *http.Request) {
 	friendId, err := uuid.Parse(chi.URLParam(r, "friend_id"))
 	if err != nil {
 		sendErrorResponse(w, http.StatusBadRequest, nil, "Friend Not Found")
+		return
 	}
 
 	friend, err := app.store.GetPlayerById(context.Background(), friendId)
 	if err != nil {
 		sendErrorResponse(w, http.StatusBadRequest, nil, "Error Finding Friend")
+		return
 	}
 	if friend == nil {
 		sendErrorResponse(w, http.StatusNotFound, nil, "Friend not found")
