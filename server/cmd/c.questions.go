@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -15,7 +14,7 @@ import (
 func HandleQuestionRoutes(app *App) http.Handler {
 	r := chi.NewRouter()
 	r.Get("/", app.handleGetQuestions)
-	r.Post("/check", app.handleCheckAnswer)
+	r.With(AuthMiddleware).Post("/check", app.handleCheckAnswer)
 	return r
 }
 
@@ -23,6 +22,7 @@ func (app *App) handleGetQuestions(w http.ResponseWriter, r *http.Request) {
 	destinations, err := app.store.GetRandomDestinationsForQuestions(context.Background())
 	if err != nil {
 		sendErrorResponse(w, http.StatusInternalServerError, err, "Error in getting questions")
+		return
 	}
 
 	if len(destinations) < 5 {
@@ -38,6 +38,7 @@ func (app *App) handleGetQuestions(w http.ResponseWriter, r *http.Request) {
 	nameOptions, err := app.store.GetRandomDestinations(context.Background(), excludeIDs)
 	if err != nil {
 		sendErrorResponse(w, http.StatusInternalServerError, err, "Error in getting questions")
+		return
 	}
 	if len(nameOptions) < 3 {
 		sendErrorResponse(w, http.StatusInternalServerError, nil, "Not enough name options available")
@@ -62,18 +63,11 @@ func (app *App) handleCheckAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	destination, err := app.store.GetDestinationByID(context.Background(), int32(body.QuestionID))
+	isCorrect, destination, err := util.CheckAnswerToQuestionID(app.store, int32(body.QuestionID), body.Answer)
 	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, err, "Error in getting questions")
-	}
-	if destination == nil {
-		sendErrorResponse(w, http.StatusNotFound, nil, "Question not found")
+		sendHerrorResponse(w, err)
 		return
 	}
-
-	correctAnswer := fmt.Sprintf("%s, %s", destination.City, destination.Country)
-
-	isCorrect := (body.Answer == correctAnswer)
 
 	player, err := app.store.GetPlayerById(context.Background(), uuid.MustParse(playerID))
 	if err != nil {
@@ -107,7 +101,7 @@ func (app *App) handleCheckAnswer(w http.ResponseWriter, r *http.Request) {
 		Correct:        isCorrect,
 		FunFacts:       destination.FunFacts,
 		Trivia:         destination.Trivia,
-		CorrectAnswer:  correctAnswer,
+		CorrectAnswer:  destination.CorrectAnswer,
 		CorrectAnswers: player.CorrectAnswers,
 		TotalAttempts:  player.TotalAttempts,
 		Score:          player.Score,

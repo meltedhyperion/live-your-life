@@ -1,9 +1,11 @@
 package util
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"math/rand"
+	"net/http"
 	"net/url"
 
 	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
@@ -64,4 +66,18 @@ func CalculateWilsonScore(correct, total int32) float64 {
 	numerator := p + (z*z)/(2*float64(total)) - z*math.Sqrt((p*(1-p)+z*z/(4*float64(total)))/float64(total))
 	denom := 1 + z*z/float64(total)
 	return numerator / denom
+}
+
+func CheckAnswerToQuestionID(store *pg_db.Store, questionID int32, answer string) (bool, FunFactsAndTrivia, error) {
+	destination, err := store.GetDestinationByID(context.Background(), questionID)
+	if err != nil {
+		return false, FunFactsAndTrivia{}, fmt.Errorf("%d %s", http.StatusInternalServerError, "Error in getting questions")
+	}
+	if destination == nil {
+		return false, FunFactsAndTrivia{}, fmt.Errorf("%d %s", http.StatusNotFound, "Question not found")
+	}
+
+	correctAnswer := fmt.Sprintf("%s, %s", destination.City, destination.Country)
+
+	return answer == correctAnswer, FunFactsAndTrivia{CorrectAnswer: correctAnswer, FunFacts: destination.FunFacts, Trivia: destination.Trivia}, nil
 }

@@ -34,3 +34,9 @@ type CheckAnswerResponse struct {
 type Leaderboard struct {
 	PlayerStats []*pg_db.GetLeaderboardForFriendsRow `json:"player_stats"`
 }
+
+type FunFactsAndTrivia struct {
+	CorrectAnswer string          `json:"correct_answer"`
+	FunFacts      json.RawMessage `json:"fun_facts"`
+	Trivia        json.RawMessage `json:"trivia"`
+}
