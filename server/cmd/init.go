@@ -10,9 +10,11 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
 	"github.com/joho/godotenv"
 	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
 	"github.com/meltedhyperion/globetrotter/server/logger"
@@ -31,7 +33,7 @@ func InitServer(app *App) {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(loggerMiddleware(logger.Log))
-
+	r.Use(httprate.LimitByIP(100, time.Minute))
 	// setup cors
 	r.Use(cors.New(cors.Options{
 		AllowCredentials: true,
