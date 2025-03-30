@@ -1,6 +1,8 @@
-# Globetrotter Challenge
+<img width="1512" alt="image" src="https://github.com/user-attachments/assets/60d1ee65-2069-4b3a-a6eb-c02f42071d0b" /># Globetrotter Challenge
 
 Globetrotter Challenge is a full-stack travel guessing game where users receive cryptic clues about famous destinations and must guess the correct location to unlock fun facts and trivia. The application leverages a Golang based backend (using chi) and a React-based frontend and Supabase for authentication and PostgreSQL DB.
+
+<img width="1512" alt="image" src="https://github.com/user-attachments/assets/cdd72308-cf6a-48c0-86bb-e49a7c9b7805" />
 <img width="1512" alt="Screenshot 2025-03-29 at 10 38 07 PM" src="https://github.com/user-attachments/assets/47b4834a-d0a2-470d-af81-cd77c0a8b0c5" />
 <img width="1512" alt="Screenshot 2025-03-29 at 10 36 45 PM" src="https://github.com/user-attachments/assets/54b11c4a-7089-4629-8e99-09db453aaae3" />
 <img width="1512" alt="Screenshot 2025-03-29 at 10 37 43 PM" src="https://github.com/user-attachments/assets/1325a758-5a33-4c9e-b201-6a0e5df7c42d" />
