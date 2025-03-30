@@ -7,40 +7,7 @@ import { Navbar } from "./components/Navbar";
 import { Game } from "./components/Game";
 import { Leaderboard } from "./components/Leaderboard";
 import { Player, LeaderboardResponse } from "./types";
-
-const useImageSlider = (interval = 5000) => {
-  const images = [
-    "scenes/1.png",
-    "scenes/2.png",
-    "scenes/3.png",
-    "scenes/4.png",
-    "scenes/5.png",
-    "scenes/6.png",
-    "scenes/7.png",
-    "scenes/8.png",
-  ];
-
-  useEffect(() => {
-    images.forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
-  }, [images]);
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    const sliderInterval = setInterval(() => {
-      setTimeout(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-      }, 500);
-    }, interval);
-
-    return () => clearInterval(sliderInterval);
-  }, [images, interval]);
-
-  return images[currentIndex];
-};
+import { useImageSlider } from "./lib/utils";
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -50,9 +17,21 @@ function App() {
     null
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [guestStats, setGuestStats] = useState({ correct: 0, total: 0 });
+  const [showAuthForm, setShowAuthForm] = useState(false);
   const currentBackground = useImageSlider();
 
-  // Fetch session and player on mount
+  useEffect(() => {
+    const storedTotal = sessionStorage.getItem("guest_total");
+    const storedCorrect = sessionStorage.getItem("guest_correct");
+    if (storedTotal && storedCorrect) {
+      setGuestStats({
+        total: Number(storedTotal),
+        correct: Number(storedCorrect),
+      });
+    }
+  }, []);
+
   useEffect(() => {
     const fetchUserAndPlayer = async () => {
       const {
@@ -73,7 +52,6 @@ function App() {
       setSession(session);
       if (session) {
         try {
-          // Check if player profile exists
           const response = await fetch(
             `${import.meta.env.VITE_BACKEND_API}/players`,
             {
@@ -84,7 +62,6 @@ function App() {
           );
 
           if (!response.ok && response.status === 404) {
-            // If player profile doesn't exist, create one
             const createResponse = await fetch(
               `${import.meta.env.VITE_BACKEND_API}/players/create`,
               {
@@ -95,6 +72,10 @@ function App() {
                 },
                 body: JSON.stringify({
                   name: session.user.email?.split("@")[0],
+                  total: Number(sessionStorage.getItem("guest_total") || "0"),
+                  correct: Number(
+                    sessionStorage.getItem("guest_correct") || "0"
+                  ),
                 }),
               }
             );
@@ -106,7 +87,6 @@ function App() {
 
           await fetchPlayer(session.access_token);
         } catch (error) {
-          // Uncomment to debug errors
           // console.error("Error handling player profile:", error);
           // toast.error("Failed to set up player profile");
         }
@@ -149,6 +129,7 @@ function App() {
         } catch (error) {
           // console.error("Error adding friend:", error);
           // toast.error("Failed to add friend");
+          localStorage.removeItem("inviteCode");
         }
       }
     };
@@ -156,7 +137,6 @@ function App() {
     handleInviteCode();
   }, [session]);
 
-  // Function to fetch player data using access token
   const fetchPlayer = async (accessToken: string) => {
     try {
       const response = await fetch(
@@ -174,19 +154,17 @@ function App() {
       setPlayer(data.data);
     } catch (error) {
       console.error("Error fetching player:", error);
-      if (!player) {
-        // toast.error("Failed to load player profile");
-      }
     }
   };
 
   const fetchLeaderboard = async () => {
+    if (!session) return;
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_API}/players/leaderboard`,
         {
           headers: {
-            Authorization: `Bearer ${session?.access_token}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
         }
       );
@@ -216,6 +194,25 @@ function App() {
     setPlayer(null);
   };
 
+  const updateScore = () => {
+    if (session) {
+      fetchPlayer(session.access_token);
+    } else {
+      const total = Number(sessionStorage.getItem("guest_total") || "0");
+      const correct = Number(sessionStorage.getItem("guest_correct") || "0");
+      setGuestStats({ total, correct });
+    }
+  };
+
+  if (!session && localStorage.getItem("inviteCode")) {
+    return (
+      <>
+        <AuthForm onAuthSuccess={() => setShowAuthForm(false)} />
+        <Toaster position="top-center" />
+      </>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -224,13 +221,8 @@ function App() {
     );
   }
 
-  if (!session) {
-    return (
-      <>
-        <AuthForm onAuthSuccess={() => {}} />
-        <Toaster position="top-center" />
-      </>
-    );
+  if (showAuthForm) {
+    return <AuthForm onAuthSuccess={() => setShowAuthForm(false)} />;
   }
 
   return (
@@ -240,19 +232,21 @@ function App() {
     >
       <div className="min-h-screen">
         <Toaster position="top-center" />
-        {/* Always render Navbar once logged in; Navbar can handle a null player gracefully */}
         <Navbar
           player={player}
+          isGuest={!session}
+          guestStats={guestStats}
+          onShowAuthForm={() => setShowAuthForm(true)}
           onShowLeaderboard={fetchLeaderboard}
           onLogout={handleLogout}
         />
         <main className="py-8">
           <Game
-            accessToken={session.access_token}
-            onScoreUpdate={() => fetchPlayer(session.access_token)}
+            accessToken={session ? session.access_token : null}
+            onScoreUpdate={updateScore}
           />
         </main>
-        {showLeaderboard && leaderboard && (
+        {session && showLeaderboard && leaderboard && (
           <Leaderboard
             leaderboard={leaderboard.player_stats}
             onClose={() => setShowLeaderboard(false)}
