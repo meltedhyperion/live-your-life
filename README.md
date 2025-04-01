@@ -1,3 +1,5 @@
+# Last Commit has the INterview assignment by Headout;
+
 # Globetrotter Challenge
 
 Globetrotter Challenge is a full-stack travel guessing game where users receive cryptic clues about famous destinations and must guess the correct location to unlock fun facts and trivia. The application leverages a Golang based backend (using chi) and a React-based frontend and Supabase for authentication and PostgreSQL DB.
