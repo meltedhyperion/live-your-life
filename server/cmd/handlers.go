@@ -11,6 +11,7 @@ func initHandler(app *App, r *chi.Mux) {
 		sendResponse(rw, 200, nil, "Welcome to the Globetrotter API!")
 	})
 	r.With(AuthMiddleware).Mount("/players", HandlePlayerRoutes(app))
-	r.With(AuthMiddleware).Mount("/questions", HandleQuestionRoutes(app))
+	r.Mount("/questions", HandleQuestionRoutes(app))
 	r.With(AuthMiddleware).Mount("/friends", HandleFriendRoutes(app))
+	r.With(AuthMiddleware).Mount("/sessions", HandleSessionsRoutes(app))
 }

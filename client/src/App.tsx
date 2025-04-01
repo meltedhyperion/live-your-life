@@ -7,17 +7,31 @@ import { Navbar } from "./components/Navbar";
 import { Game } from "./components/Game";
 import { Leaderboard } from "./components/Leaderboard";
 import { Player, LeaderboardResponse } from "./types";
+import { useImageSlider } from "./lib/utils";
 
 function App() {
-  const [session, setSession] = useState < any > (null);
-  const [player, setPlayer] = useState < Player | null > (null);
+  const [session, setSession] = useState<any>(null);
+  const [player, setPlayer] = useState<Player | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [leaderboard, setLeaderboard] = useState < LeaderboardResponse | null > (
+  const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(
     null
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [guestStats, setGuestStats] = useState({ correct: 0, total: 0 });
+  const [showAuthForm, setShowAuthForm] = useState(false);
+  const currentBackground = useImageSlider();
 
-  // Fetch session and player on mount
+  useEffect(() => {
+    const storedTotal = sessionStorage.getItem("guest_total");
+    const storedCorrect = sessionStorage.getItem("guest_correct");
+    if (storedTotal && storedCorrect) {
+      setGuestStats({
+        total: Number(storedTotal),
+        correct: Number(storedCorrect),
+      });
+    }
+  }, []);
+
   useEffect(() => {
     const fetchUserAndPlayer = async () => {
       const {
@@ -38,7 +52,6 @@ function App() {
       setSession(session);
       if (session) {
         try {
-          // Check if player profile exists
           const response = await fetch(
             `${import.meta.env.VITE_BACKEND_API}/players`,
             {
@@ -49,7 +62,6 @@ function App() {
           );
 
           if (!response.ok && response.status === 404) {
-            // If player profile doesn't exist, create one
             const createResponse = await fetch(
               `${import.meta.env.VITE_BACKEND_API}/players/create`,
               {
@@ -60,6 +72,10 @@ function App() {
                 },
                 body: JSON.stringify({
                   name: session.user.email?.split("@")[0],
+                  total: Number(sessionStorage.getItem("guest_total") || "0"),
+                  correct: Number(
+                    sessionStorage.getItem("guest_correct") || "0"
+                  ),
                 }),
               }
             );
@@ -71,7 +87,6 @@ function App() {
 
           await fetchPlayer(session.access_token);
         } catch (error) {
-          // Uncomment to debug errors
           // console.error("Error handling player profile:", error);
           // toast.error("Failed to set up player profile");
         }
@@ -82,16 +97,21 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Handle invite code (runs whenever session changes)
   useEffect(() => {
     const handleInviteCode = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const inviteCode = urlParams.get("invite-code");
+      const inviteCodeFromUrl = urlParams.get("invite-code");
 
-      if (inviteCode && session) {
+      if (inviteCodeFromUrl) {
+        localStorage.setItem("inviteCode", inviteCodeFromUrl);
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+
+      const storedInviteCode = localStorage.getItem("inviteCode");
+      if (storedInviteCode && session) {
         try {
           const response = await fetch(
-            `${import.meta.env.VITE_BACKEND_API}/friends/${inviteCode}`,
+            `${import.meta.env.VITE_BACKEND_API}/friends/${storedInviteCode}`,
             {
               method: "POST",
               headers: {
@@ -105,11 +125,11 @@ function App() {
           }
 
           toast.success("Friend added successfully!");
-          // Remove the invite code from the URL
-          window.history.replaceState({}, "", window.location.pathname);
+          localStorage.removeItem("inviteCode");
         } catch (error) {
           // console.error("Error adding friend:", error);
           // toast.error("Failed to add friend");
+          localStorage.removeItem("inviteCode");
         }
       }
     };
@@ -117,7 +137,6 @@ function App() {
     handleInviteCode();
   }, [session]);
 
-  // Function to fetch player data using access token
   const fetchPlayer = async (accessToken: string) => {
     try {
       const response = await fetch(
@@ -135,19 +154,17 @@ function App() {
       setPlayer(data.data);
     } catch (error) {
       console.error("Error fetching player:", error);
-      if (!player) {
-        // toast.error("Failed to load player profile");
-      }
     }
   };
 
   const fetchLeaderboard = async () => {
+    if (!session) return;
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_API}/players/leaderboard`,
         {
           headers: {
-            Authorization: `Bearer ${session?.access_token}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
         }
       );
@@ -177,6 +194,25 @@ function App() {
     setPlayer(null);
   };
 
+  const updateScore = () => {
+    if (session) {
+      fetchPlayer(session.access_token);
+    } else {
+      const total = Number(sessionStorage.getItem("guest_total") || "0");
+      const correct = Number(sessionStorage.getItem("guest_correct") || "0");
+      setGuestStats({ total, correct });
+    }
+  };
+
+  if (!session && localStorage.getItem("inviteCode")) {
+    return (
+      <>
+        <AuthForm onAuthSuccess={() => setShowAuthForm(false)} />
+        <Toaster position="top-center" />
+      </>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -185,46 +221,46 @@ function App() {
     );
   }
 
-  if (!session) {
-    return (
-      <>
-        <AuthForm onAuthSuccess={() => { }} />
-        <Toaster position="top-center" />
-      </>
-    );
+  if (showAuthForm) {
+    return <AuthForm onAuthSuccess={() => setShowAuthForm(false)} />;
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen bg-cover bg-no-repeat bg-center transition-opacity duration-1000 ease-in-out"
+      style={{ backgroundImage: `url(${currentBackground})` }}
+    >
+      <div className="min-h-screen">
         <Toaster position="top-center" />
-        {/* Always render Navbar once logged in; Navbar can handle a null player gracefully */}
         <Navbar
           player={player}
+          isGuest={!session}
+          guestStats={guestStats}
+          onShowAuthForm={() => setShowAuthForm(true)}
           onShowLeaderboard={fetchLeaderboard}
           onLogout={handleLogout}
         />
         <main className="py-8">
           <Game
-            accessToken={session.access_token}
-            onScoreUpdate={() => fetchPlayer(session.access_token)}
+            accessToken={session ? session.access_token : null}
+            onScoreUpdate={updateScore}
           />
         </main>
-        {showLeaderboard && leaderboard && (
+        {session && showLeaderboard && leaderboard && (
           <Leaderboard
             leaderboard={leaderboard.player_stats}
             onClose={() => setShowLeaderboard(false)}
           />
         )}
       </div>
-      <footer className="fixed bottom-0 left-0 right-0 text-center p-4 text-sm text-gray-600">
+      <footer className="fixed bottom-0 left-0 right-0 text-center p-4 text-sm text-white">
         Made with{" "}
         <span role="img" aria-label="heart" className="text-red-500">
           ❤️
         </span>{" "}
         by aryansingh.dev
       </footer>
-    </>
+    </div>
   );
 }
 

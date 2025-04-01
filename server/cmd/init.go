@@ -2,21 +2,25 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
 	"github.com/joho/godotenv"
+	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
 	"github.com/meltedhyperion/globetrotter/server/logger"
 	"github.com/meltedhyperion/globetrotter/server/util"
 	"github.com/rs/cors"
-	"github.com/sirupsen/logrus"
-	"github.com/supabase-community/supabase-go"
+	"go.uber.org/zap"
 )
 
 func InitConfig() {
@@ -28,13 +32,8 @@ func InitConfig() {
 func InitServer(app *App) {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.JSONFormatter{})
-	logger.SetOutput(os.Stdout)
-
-	r.Use(loggerMiddleware(logger))
-
+	r.Use(loggerMiddleware(logger.Log))
+	r.Use(httprate.LimitByIP(100, time.Minute))
 	// setup cors
 	r.Use(cors.New(cors.Options{
 		AllowCredentials: true,
@@ -71,23 +70,31 @@ func InitServer(app *App) {
 }
 
 func InitDB(app *App) {
-	client, err := supabase.NewClient(os.Getenv("SUPABASE_URL"), os.Getenv("SUPABASE_ANON_KEY"), &supabase.ClientOptions{})
+	logger.Log.Info("connecting to db")
+	tDB, err := sql.Open("postgres", os.Getenv("DB_URI"))
 	if err != nil {
-		logger.Log.Error(err)
-		app.DB = client
+		logger.Log.Fatal("CANNOT INIT DB", err)
 	}
-	app.DB = client
-	logger.Log.Info("DB initialized")
+	err = tDB.Ping()
+	if err != nil {
+		logger.Log.Fatal("CANNOT PING DB", err)
+	}
+	q, err := pg_db.Prepare(context.Background(), tDB)
+	if err != nil {
+		logger.Log.Fatal("CANNOT PREPARE DB", err)
+	}
+	logger.Log.Info("connected to pg db")
+	app.store = pg_db.NewStore(tDB, q)
 }
 
-func loggerMiddleware(logger *logrus.Logger) func(next http.Handler) http.Handler {
+func loggerMiddleware(logger *zap.SugaredLogger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var requestBody []byte
 			if r.Body != nil {
 				body, err := io.ReadAll(r.Body)
 				if err != nil {
-					logger.WithError(err).Error("Error reading request body")
+					logger.Errorw("Error reading request body", "error", err)
 				}
 				requestBody = body
 				r.Body = io.NopCloser(bytes.NewReader(body))
@@ -109,16 +116,15 @@ func loggerMiddleware(logger *logrus.Logger) func(next http.Handler) http.Handle
 				}
 			}
 			next.ServeHTTP(w, r)
-			logEntry := logrus.Fields{
-				"request_headers":     requestHeaders,
-				"request_method":      r.Method,
-				"request_url":         r.URL.String(),
-				"request_query":       queryParams,
-				"request_payload":     string(requestBody),
-				"response_status":     w.Header().Get("Status"),
-				"response_statuscode": w.Header().Get("StatusCode"),
-			}
-			logger.WithFields(logEntry).Info("HTTP Request")
+			logger.Infow("HTTP Request",
+				"request_headers", requestHeaders,
+				"request_method", r.Method,
+				"request_url", r.URL.String(),
+				"request_query", queryParams,
+				"request_payload", string(requestBody),
+				"response_status", w.Header().Get("Status"),
+				"response_statuscode", w.Header().Get("StatusCode"),
+			)
 		})
 	}
 }

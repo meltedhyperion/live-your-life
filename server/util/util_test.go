@@ -1,10 +1,13 @@
 package util
 
 import (
+	"encoding/json"
 	"math"
 	"math/rand"
 	"strings"
 	"testing"
+
+	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
 )
 
 func TestPadStringTo(t *testing.T) {
@@ -41,31 +44,17 @@ func TestGenerateAvatar(t *testing.T) {
 	}
 }
 
-func TestConvertIntSliceToPostgresArray(t *testing.T) {
-	tests := []struct {
-		input    []int
-		expected string
-	}{
-		{[]int{1, 2, 3}, "(1,2,3)"},
-		{[]int{}, "()"},
-		{[]int{42}, "(42)"},
-	}
-
-	for _, tt := range tests {
-		got := ConvertIntSliceToPostgresArray(tt.input)
-		if got != tt.expected {
-			t.Errorf("ConvertIntSliceToPostgresArray(%v) = %q; want %q", tt.input, got, tt.expected)
-		}
-	}
+func stringToRawMessage(cluesData []string) json.RawMessage {
+	cluesJSON, _ := json.Marshal(cluesData)
+	return cluesJSON
 }
-
 func TestGenerateQuestion(t *testing.T) {
 	rand.Seed(100)
-	destinations := []Destination{
-		{ID: 1, City: "Paris", Country: "France", Clues: []string{"Eiffel Tower", "Louvre"}},
-		{ID: 2, City: "Tokyo", Country: "Japan", Clues: []string{"Sushi", "Cherry Blossoms"}},
+	destinations := []*pg_db.GetRandomDestinationsForQuestionsRow{
+		{ID: 1, City: "Paris", Country: "France", Clues: stringToRawMessage([]string{"Eiffel Tower", "Louvre"})},
+		{ID: 2, City: "Tokyo", Country: "Japan", Clues: stringToRawMessage([]string{"Sushi", "Cherry Blossoms"})},
 	}
-	nameOptions := []NameOption{
+	nameOptions := []*pg_db.GetRandomDestinationsRow{
 		{City: "Paris", Country: "France"},
 		{City: "London", Country: "UK"},
 		{City: "Berlin", Country: "Germany"},
@@ -81,7 +70,7 @@ func TestGenerateQuestion(t *testing.T) {
 	for _, q := range questions {
 		var correct string
 		for _, dest := range destinations {
-			if dest.ID == q.QuestionID {
+			if dest.ID == int32(q.QuestionID) {
 				correct = dest.City + ", " + dest.Country
 				break
 			}
@@ -127,28 +116,5 @@ func TestCalculateWilsonScore(t *testing.T) {
 	expected = 0.0
 	if math.Abs(score-expected) > 1e-5 {
 		t.Errorf("CalculateWilsonScore(0, 5) = %f; want %f", score, expected)
-	}
-}
-
-func TestParseDestinations(t *testing.T) {
-	validJSON := `[{"ID": 1, "City": "Paris", "Country": "France", "Clues": "[\"Eiffel Tower\", \"Louvre\"]"}, {"ID": 2, "City": "Tokyo", "Country": "Japan", "Clues": "[\"Sushi\", \"Cherry Blossoms\"]"}]`
-	dests, err := ParseDestinations(validJSON)
-	if err != nil {
-		t.Fatalf("ParseDestinations returned error: %v", err)
-	}
-	if len(dests) != 2 {
-		t.Errorf("Expected 2 destinations, got %d", len(dests))
-	}
-	if dests[0].ID != 1 || dests[0].City != "Paris" || dests[0].Country != "France" {
-		t.Errorf("Destination[0] mismatch: got %+v", dests[0])
-	}
-	if len(dests[0].Clues) != 2 || dests[0].Clues[0] != "Eiffel Tower" || dests[0].Clues[1] != "Louvre" {
-		t.Errorf("Destination[0] clues mismatch: got %v", dests[0].Clues)
-	}
-
-	badJSON := `[{"ID": 1, "City": "Paris", "Country": "France", "Clues": "not a json array"}]`
-	_, err = ParseDestinations(badJSON)
-	if err == nil {
-		t.Errorf("ParseDestinations did not return error for invalid clues JSON")
 	}
 }

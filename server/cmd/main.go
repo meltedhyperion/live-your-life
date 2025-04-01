@@ -1,22 +1,26 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
 	"github.com/meltedhyperion/globetrotter/server/logger"
-	"github.com/supabase-community/supabase-go"
 )
 
 type App struct {
-	Srv *http.Server
-	DB  *supabase.Client
+	Srv   *http.Server
+	store *pg_db.Store
 }
 
 func main() {
+
 	app := &App{}
 
 	InitConfig()
+	fmt.Println("here")
 	InitDB(app)
+	fmt.Println("here")
 	InitServer(app)
 
 	logger.Log.Info("api running on", app.Srv.Addr)

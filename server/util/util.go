@@ -1,12 +1,14 @@
 package util
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	"math"
 	"math/rand"
+	"net/http"
 	"net/url"
-	"strconv"
+
+	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
 )
 
 func PadStringTo(v string, n int) string {
@@ -24,24 +26,12 @@ func GenerateAvatar(seed string) string {
 	return fmt.Sprintf("https://api.dicebear.com/7.x/%s/svg?seed=%s&backgroundColor=%s&size=128", style, seedEncoded, randomBg)
 }
 
-func ConvertIntSliceToPostgresArray(slice []int) string {
-	var postgresArray string
-	for i, id := range slice {
-		if i > 0 {
-			postgresArray += ","
-		}
-		postgresArray += strconv.Itoa(id)
-	}
-	postgresArray = "(" + postgresArray + ")"
-	return postgresArray
-}
-
-func GenerateQuestion(destinations []Destination, nameOptions []NameOption) []Question {
+func GenerateQuestion(destinations []*pg_db.GetRandomDestinationsForQuestionsRow, nameOptions []*pg_db.GetRandomDestinationsRow) []Question {
 	questions := make([]Question, 0, 5)
 	for _, dest := range destinations {
 		correct := fmt.Sprintf("%s, %s", dest.City, dest.Country)
 
-		wrongPool := make([]NameOption, len(nameOptions))
+		wrongPool := make([]*pg_db.GetRandomDestinationsRow, len(nameOptions))
 		copy(wrongPool, nameOptions)
 		rand.Shuffle(len(wrongPool), func(i, j int) {
 			wrongPool[i], wrongPool[j] = wrongPool[j], wrongPool[i]
@@ -58,7 +48,7 @@ func GenerateQuestion(destinations []Destination, nameOptions []NameOption) []Qu
 		})
 
 		q := Question{
-			QuestionID:    dest.ID,
+			QuestionID:    int(dest.ID),
 			QuestionHints: dest.Clues,
 			AnswerOptions: options,
 		}
@@ -67,7 +57,7 @@ func GenerateQuestion(destinations []Destination, nameOptions []NameOption) []Qu
 	return questions
 }
 
-func CalculateWilsonScore(correct, total int) float64 {
+func CalculateWilsonScore(correct, total int32) float64 {
 	if total == 0 {
 		return 0.0
 	}
@@ -78,24 +68,13 @@ func CalculateWilsonScore(correct, total int) float64 {
 	return numerator / denom
 }
 
-func ParseDestinations(data string) ([]Destination, error) {
-	var rawDestinations []RawDestination
-	if err := json.Unmarshal([]byte(data), &rawDestinations); err != nil {
-		return nil, err
+func CheckAnswerToQuestionID(store *pg_db.Store, questionID int32, answer string) (bool, FunFactsAndTrivia, error) {
+	destination, err := store.GetDestinationByID(context.Background(), questionID)
+	if err != nil {
+		return false, FunFactsAndTrivia{}, fmt.Errorf("%d %s", http.StatusNotFound, "Question not found")
 	}
 
-	var destinations []Destination
-	for _, raw := range rawDestinations {
-		var clues []string
-		if err := json.Unmarshal([]byte(raw.Clues), &clues); err != nil {
-			return nil, err
-		}
-		destinations = append(destinations, Destination{
-			ID:      raw.ID,
-			City:    raw.City,
-			Country: raw.Country,
-			Clues:   clues,
-		})
-	}
-	return destinations, nil
+	correctAnswer := fmt.Sprintf("%s, %s", destination.City, destination.Country)
+
+	return answer == correctAnswer, FunFactsAndTrivia{CorrectAnswer: correctAnswer, FunFacts: destination.FunFacts, Trivia: destination.Trivia}, nil
 }

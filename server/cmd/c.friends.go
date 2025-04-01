@@ -1,11 +1,12 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/meltedhyperion/globetrotter/server/util"
+	"github.com/google/uuid"
+	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
 )
 
 func HandleFriendRoutes(app *App) http.Handler {
@@ -20,42 +21,30 @@ func (app *App) handleMakeFriend(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, http.StatusUnauthorized, nil, "User not authenticated")
 		return
 	}
-	friendId := chi.URLParam(r, "friend_id")
+	friendId, err := uuid.Parse(chi.URLParam(r, "friend_id"))
+	if err != nil {
+		sendErrorResponse(w, http.StatusBadRequest, nil, "Friend Not Found")
+		return
+	}
 
-	resp, _, err := app.DB.From("players").Select("name", "", false).Eq("id", friendId).Execute()
+	friend, err := app.store.GetPlayerById(context.Background(), friendId)
 	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in getting player")
+		sendErrorResponse(w, http.StatusBadRequest, nil, "Error Finding Friend")
 		return
 	}
-	var player []util.Player
-	err = json.Unmarshal(resp, &player)
-	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in getting player")
-		return
-	}
-	if len(player) == 0 {
+	if friend == nil {
 		sendErrorResponse(w, http.StatusNotFound, nil, "Friend not found")
 		return
 	}
 
-	addFriendA := util.AddFriend{
-		Player1ID: playerId,
+	err = app.store.AddFriend(context.Background(), &pg_db.AddFriendParams{
+		Player1ID: uuid.MustParse(playerId),
 		Player2ID: friendId,
-	}
-
-	_, _, err = app.DB.From("friends").Insert(addFriendA, false, "", "", "").Execute()
+	})
 	if err != nil {
 		sendErrorResponse(w, http.StatusConflict, nil, "Friend already exists")
 		return
 	}
-
-	addFriendB := util.AddFriend{
-		Player1ID: friendId,
-		Player2ID: playerId,
-	}
-
-	_, _, _ = app.DB.From("friends").Insert(addFriendB, false, "", "", "").Execute()
-
 	sendResponse(w, http.StatusOK, nil, "Friend added successfully")
 
 }

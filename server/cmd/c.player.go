@@ -1,12 +1,14 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"net/http"
 	"sort"
-	"time"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
 	"github.com/meltedhyperion/globetrotter/server/util"
 )
 
@@ -24,21 +26,6 @@ func (app *App) handleCreatePlayer(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, http.StatusUnauthorized, nil, "User not authenticated")
 		return
 	}
-	res, _, err := app.DB.From("players").Select("id", "exact", false).Eq("id", playerId).Execute()
-	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in fetching player")
-		return
-	}
-	var p []map[string]interface{}
-	err = json.Unmarshal(res, &p)
-	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in getting player")
-		return
-	}
-	if len(p) > 0 {
-		sendErrorResponse(w, http.StatusConflict, nil, "Player already exists")
-		return
-	}
 	body, err := getBodyWithType[util.CreatePlayerReq](r)
 	if err != nil {
 		sendHerrorResponse(w, err)
@@ -46,19 +33,17 @@ func (app *App) handleCreatePlayer(w http.ResponseWriter, r *http.Request) {
 	}
 	avatar := util.GenerateAvatar(playerId)
 
-	player := util.Player{
-		ID:             playerId,
-		Name:           body.Name,
-		Avatar:         avatar,
-		CorrectAnswers: 0,
-		TotalAttempts:  0,
-		Score:          0.0,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+	player := &pg_db.CreateNewPlayerParams{
+		ID:     uuid.MustParse(playerId),
+		Name:   body.Name,
+		Avatar: avatar,
 	}
-
-	_, _, err = app.DB.From("players").Insert(player, false, "", "representation", "").Execute()
+	err = app.store.CreateNewPlayer(context.Background(), player)
 	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			sendErrorResponse(w, http.StatusConflict, nil, "Player already exists")
+			return
+		}
 		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in creating player")
 		return
 	}
@@ -72,22 +57,16 @@ func (app *App) handleGetPlayerById(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, http.StatusUnauthorized, nil, "User not authenticated")
 		return
 	}
-	var player []util.Player
-	resp, _, err := app.DB.From("players").Select("id, name, avatar, correct_answers, total_attempts, score", "exact", false).Eq("id", playerId).Execute()
+	player, err := app.store.GetPlayerById(context.Background(), uuid.MustParse(playerId))
 	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in getting player")
+		sendErrorResponse(w, http.StatusInternalServerError, err, "Error in getting player data")
 		return
 	}
-	err = json.Unmarshal(resp, &player)
-	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in getting player")
+	if player == nil {
+		sendErrorResponse(w, http.StatusNotFound, nil, "Player Data Not Found")
 		return
 	}
-	if len(player) == 0 {
-		sendErrorResponse(w, http.StatusNotFound, nil, "Player not found")
-		return
-	}
-	sendResponse(w, http.StatusOK, player[0], "Player fetched successfully")
+	sendResponse(w, http.StatusOK, player, "Player fetched successfully")
 }
 
 func (app *App) handleGetLeaderboard(w http.ResponseWriter, r *http.Request) {
@@ -96,39 +75,20 @@ func (app *App) handleGetLeaderboard(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, http.StatusUnauthorized, nil, "User not authenticated")
 		return
 	}
-	var leaderboard util.Leaderboard
-	var listOfFriendIDs []util.FriendsIDs
-	var leaderboardPlayers []string
-	resp, _, err := app.DB.From("friends").Select("player2_id", "exact", false).Eq("player1_id", playerId).Execute()
+	leaderboard, err := app.store.GetLeaderboardForFriends(context.Background(), uuid.MustParse(playerId))
 	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in getting friends")
+		sendErrorResponse(w, http.StatusInternalServerError, err, "Error in getting player data")
 		return
 	}
-	err = json.Unmarshal(resp, &listOfFriendIDs)
-	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in getting friends")
-		return
-	}
-	if len(listOfFriendIDs) == 0 {
+	if leaderboard == nil || len(leaderboard) == 1 {
 		sendErrorResponse(w, http.StatusNotFound, nil, "Sorry buddy you are friendless")
 		return
 	}
-	for _, friend := range listOfFriendIDs {
-		leaderboardPlayers = append(leaderboardPlayers, friend.FriendID)
-	}
-	leaderboardPlayers = append(leaderboardPlayers, playerId)
-	resp, _, err = app.DB.From("players").Select("name, avatar, correct_answers, total_attempts, score", "exact", false).In("id", leaderboardPlayers).Execute()
-	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in getting leaderboard")
-		return
-	}
-	err = json.Unmarshal(resp, &leaderboard.PlayerStats)
-	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()}, "Error in getting leaderboard")
-		return
-	}
-	sort.Slice(leaderboard.PlayerStats, func(i, j int) bool {
-		return leaderboard.PlayerStats[i].Score > leaderboard.PlayerStats[j].Score
+	sort.Slice(leaderboard, func(i, j int) bool {
+		return leaderboard[i].Score > leaderboard[j].Score
 	})
-	sendResponse(w, http.StatusOK, leaderboard, "Leaderboard fetched successfully")
+	playerStats := util.Leaderboard{
+		PlayerStats: leaderboard,
+	}
+	sendResponse(w, http.StatusOK, playerStats, "Leaderboard fetched successfully")
 }
