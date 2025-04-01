@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/meltedhyperion/globetrotter/server/db/pg_db"
@@ -13,10 +14,13 @@ type App struct {
 }
 
 func main() {
+
 	app := &App{}
 
 	InitConfig()
+	fmt.Println("here")
 	InitDB(app)
+	fmt.Println("here")
 	InitServer(app)
 
 	logger.Log.Info("api running on", app.Srv.Addr)

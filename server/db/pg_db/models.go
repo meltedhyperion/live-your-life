@@ -5,6 +5,7 @@
 package pg_db
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -38,4 +39,13 @@ type Player struct {
 	Score          float64   `json:"score"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type Session struct {
+	ID             int32         `json:"id"`
+	UserID         uuid.UUID     `json:"user_id"`
+	Destinations   []int32       `json:"destinations"`
+	Score          float64       `json:"score"`
+	TotalAttempted sql.NullInt32 `json:"total_attempted"`
+	Correct        sql.NullInt32 `json:"correct"`
 }

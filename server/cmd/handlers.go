@@ -13,4 +13,5 @@ func initHandler(app *App, r *chi.Mux) {
 	r.With(AuthMiddleware).Mount("/players", HandlePlayerRoutes(app))
 	r.Mount("/questions", HandleQuestionRoutes(app))
 	r.With(AuthMiddleware).Mount("/friends", HandleFriendRoutes(app))
+	r.With(AuthMiddleware).Mount("/sessions", HandleSessionsRoutes(app))
 }

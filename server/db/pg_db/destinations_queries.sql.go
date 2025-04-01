@@ -37,6 +37,54 @@ func (q *Queries) GetDestinationByID(ctx context.Context, id int32) (*GetDestina
 	return &i, err
 }
 
+const getRandomDestinationForSessions = `-- name: GetRandomDestinationForSessions :many
+
+SELECT id, city, country
+FROM destinations
+WHERE id NOT IN (SELECT unnest($1::int[]))
+ORDER BY RANDOM()
+LIMIT $2
+`
+
+type GetRandomDestinationForSessionsParams struct {
+	Column1 []int32 `json:"column_1"`
+	Limit   int32   `json:"limit"`
+}
+
+type GetRandomDestinationForSessionsRow struct {
+	ID      int32  `json:"id"`
+	City    string `json:"city"`
+	Country string `json:"country"`
+}
+
+// -- name: GetRandomDestinationsForSessionQuestions :many
+// SELECT id, city, country, clues
+// FROM destinations
+// ORDER BY RANDOM()
+// LIMIT $1;
+func (q *Queries) GetRandomDestinationForSessions(ctx context.Context, arg *GetRandomDestinationForSessionsParams) ([]*GetRandomDestinationForSessionsRow, error) {
+	rows, err := q.query(ctx, q.getRandomDestinationForSessionsStmt, getRandomDestinationForSessions, pq.Array(arg.Column1), arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*GetRandomDestinationForSessionsRow{}
+	for rows.Next() {
+		var i GetRandomDestinationForSessionsRow
+		if err := rows.Scan(&i.ID, &i.City, &i.Country); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRandomDestinations = `-- name: GetRandomDestinations :many
 SELECT id, city, country
 FROM destinations
@@ -106,6 +154,35 @@ func (q *Queries) GetRandomDestinationsForQuestions(ctx context.Context) ([]*Get
 			return nil, err
 		}
 		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRandomDestinationsForSessionQuestions = `-- name: GetRandomDestinationsForSessionQuestions :many
+SELECT id FROM destinations
+ORDER BY RANDOM()
+LIMIT 10
+`
+
+func (q *Queries) GetRandomDestinationsForSessionQuestions(ctx context.Context) ([]int32, error) {
+	rows, err := q.query(ctx, q.getRandomDestinationsForSessionQuestionsStmt, getRandomDestinationsForSessionQuestions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int32{}
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

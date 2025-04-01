@@ -30,6 +30,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createNewPlayerStmt, err = db.PrepareContext(ctx, createNewPlayer); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateNewPlayer: %w", err)
 	}
+	if q.createUserSessionStmt, err = db.PrepareContext(ctx, createUserSession); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateUserSession: %w", err)
+	}
+	if q.getAllUserSessionByIDStmt, err = db.PrepareContext(ctx, getAllUserSessionByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetAllUserSessionByID: %w", err)
+	}
 	if q.getDestinationByIDStmt, err = db.PrepareContext(ctx, getDestinationByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetDestinationByID: %w", err)
 	}
@@ -45,14 +51,26 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getPlayerByIdStmt, err = db.PrepareContext(ctx, getPlayerById); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPlayerById: %w", err)
 	}
+	if q.getRandomDestinationForSessionsStmt, err = db.PrepareContext(ctx, getRandomDestinationForSessions); err != nil {
+		return nil, fmt.Errorf("error preparing query GetRandomDestinationForSessions: %w", err)
+	}
 	if q.getRandomDestinationsStmt, err = db.PrepareContext(ctx, getRandomDestinations); err != nil {
 		return nil, fmt.Errorf("error preparing query GetRandomDestinations: %w", err)
 	}
 	if q.getRandomDestinationsForQuestionsStmt, err = db.PrepareContext(ctx, getRandomDestinationsForQuestions); err != nil {
 		return nil, fmt.Errorf("error preparing query GetRandomDestinationsForQuestions: %w", err)
 	}
+	if q.getRandomDestinationsForSessionQuestionsStmt, err = db.PrepareContext(ctx, getRandomDestinationsForSessionQuestions); err != nil {
+		return nil, fmt.Errorf("error preparing query GetRandomDestinationsForSessionQuestions: %w", err)
+	}
+	if q.getUserSessionByIDStmt, err = db.PrepareContext(ctx, getUserSessionByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetUserSessionByID: %w", err)
+	}
 	if q.updatePlayerScoreStmt, err = db.PrepareContext(ctx, updatePlayerScore); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdatePlayerScore: %w", err)
+	}
+	if q.updateUserSessionStmt, err = db.PrepareContext(ctx, updateUserSession); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateUserSession: %w", err)
 	}
 	return &q, nil
 }
@@ -67,6 +85,16 @@ func (q *Queries) Close() error {
 	if q.createNewPlayerStmt != nil {
 		if cerr := q.createNewPlayerStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createNewPlayerStmt: %w", cerr)
+		}
+	}
+	if q.createUserSessionStmt != nil {
+		if cerr := q.createUserSessionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createUserSessionStmt: %w", cerr)
+		}
+	}
+	if q.getAllUserSessionByIDStmt != nil {
+		if cerr := q.getAllUserSessionByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getAllUserSessionByIDStmt: %w", cerr)
 		}
 	}
 	if q.getDestinationByIDStmt != nil {
@@ -94,6 +122,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getPlayerByIdStmt: %w", cerr)
 		}
 	}
+	if q.getRandomDestinationForSessionsStmt != nil {
+		if cerr := q.getRandomDestinationForSessionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getRandomDestinationForSessionsStmt: %w", cerr)
+		}
+	}
 	if q.getRandomDestinationsStmt != nil {
 		if cerr := q.getRandomDestinationsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getRandomDestinationsStmt: %w", cerr)
@@ -104,9 +137,24 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getRandomDestinationsForQuestionsStmt: %w", cerr)
 		}
 	}
+	if q.getRandomDestinationsForSessionQuestionsStmt != nil {
+		if cerr := q.getRandomDestinationsForSessionQuestionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getRandomDestinationsForSessionQuestionsStmt: %w", cerr)
+		}
+	}
+	if q.getUserSessionByIDStmt != nil {
+		if cerr := q.getUserSessionByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getUserSessionByIDStmt: %w", cerr)
+		}
+	}
 	if q.updatePlayerScoreStmt != nil {
 		if cerr := q.updatePlayerScoreStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updatePlayerScoreStmt: %w", cerr)
+		}
+	}
+	if q.updateUserSessionStmt != nil {
+		if cerr := q.updateUserSessionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateUserSessionStmt: %w", cerr)
 		}
 	}
 	return err
@@ -146,18 +194,24 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                                    DBTX
-	tx                                    *sql.Tx
-	addFriendStmt                         *sql.Stmt
-	createNewPlayerStmt                   *sql.Stmt
-	getDestinationByIDStmt                *sql.Stmt
-	getFriendsIdListOfPlayerByIDStmt      *sql.Stmt
-	getLeaderboardDetailsStmt             *sql.Stmt
-	getLeaderboardForFriendsStmt          *sql.Stmt
-	getPlayerByIdStmt                     *sql.Stmt
-	getRandomDestinationsStmt             *sql.Stmt
-	getRandomDestinationsForQuestionsStmt *sql.Stmt
-	updatePlayerScoreStmt                 *sql.Stmt
+	db                                           DBTX
+	tx                                           *sql.Tx
+	addFriendStmt                                *sql.Stmt
+	createNewPlayerStmt                          *sql.Stmt
+	createUserSessionStmt                        *sql.Stmt
+	getAllUserSessionByIDStmt                    *sql.Stmt
+	getDestinationByIDStmt                       *sql.Stmt
+	getFriendsIdListOfPlayerByIDStmt             *sql.Stmt
+	getLeaderboardDetailsStmt                    *sql.Stmt
+	getLeaderboardForFriendsStmt                 *sql.Stmt
+	getPlayerByIdStmt                            *sql.Stmt
+	getRandomDestinationForSessionsStmt          *sql.Stmt
+	getRandomDestinationsStmt                    *sql.Stmt
+	getRandomDestinationsForQuestionsStmt        *sql.Stmt
+	getRandomDestinationsForSessionQuestionsStmt *sql.Stmt
+	getUserSessionByIDStmt                       *sql.Stmt
+	updatePlayerScoreStmt                        *sql.Stmt
+	updateUserSessionStmt                        *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -166,13 +220,19 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		tx:                                    tx,
 		addFriendStmt:                         q.addFriendStmt,
 		createNewPlayerStmt:                   q.createNewPlayerStmt,
+		createUserSessionStmt:                 q.createUserSessionStmt,
+		getAllUserSessionByIDStmt:             q.getAllUserSessionByIDStmt,
 		getDestinationByIDStmt:                q.getDestinationByIDStmt,
 		getFriendsIdListOfPlayerByIDStmt:      q.getFriendsIdListOfPlayerByIDStmt,
 		getLeaderboardDetailsStmt:             q.getLeaderboardDetailsStmt,
 		getLeaderboardForFriendsStmt:          q.getLeaderboardForFriendsStmt,
 		getPlayerByIdStmt:                     q.getPlayerByIdStmt,
+		getRandomDestinationForSessionsStmt:   q.getRandomDestinationForSessionsStmt,
 		getRandomDestinationsStmt:             q.getRandomDestinationsStmt,
 		getRandomDestinationsForQuestionsStmt: q.getRandomDestinationsForQuestionsStmt,
-		updatePlayerScoreStmt:                 q.updatePlayerScoreStmt,
+		getRandomDestinationsForSessionQuestionsStmt: q.getRandomDestinationsForSessionQuestionsStmt,
+		getUserSessionByIDStmt:                       q.getUserSessionByIDStmt,
+		updatePlayerScoreStmt:                        q.updatePlayerScoreStmt,
+		updateUserSessionStmt:                        q.updateUserSessionStmt,
 	}
 }
